@@ -1,0 +1,104 @@
+Build an automated lead scoring system for Prime Apparel 
+Exports that scores every new contact from 0-100.
+
+SCORING FACTORS AND WEIGHTS:
+
+Factor 1 — Business Type (15 points)
+- Established offline shop with fixed location: 15
+- Active boutique with online presence: 12
+- Online seller with good following: 10
+- Small part-time reseller: 6
+- Only WhatsApp group seller, no structure: 3
+- Unknown / not specified: 5
+
+Factor 2 — Online Presence (15 points)
+Check their Instagram, Facebook links if provided:
+- Google listing + active Instagram (recent posts): 15
+- Only Google listing OR only one active social: 10
+- Weak presence, few posts, small following: 6
+- No online presence found: 3
+- Did not share any links: 5
+
+Factor 3 — Location Stability (10 points)
+- Shop in main market, Tier 1 or 2 city: 10
+- Tier 3 town, shop looks stable: 7
+- Village or remote area: 4
+- No fixed address, unclear location: 2
+- Metro city residential area (not commercial): 6
+
+Factor 4 — Activity Level (15 points)
+Check their social media activity:
+- Posts daily or every 2 days, customer photos: 15
+- Posts weekly, some engagement: 10
+- Posts monthly or less: 5
+- Account exists but dormant: 2
+
+Factor 5 — Product Fit (20 points)
+- Currently sells ethnic kurtis and suits primarily: 20
+- Sells mix of ethnic and western: 14
+- Mostly western but some ethnic: 8
+- Completely different category (lingerie, kids): 2
+- Online seller with no specific category: 10
+
+Factor 6 — Purchase Potential (15 points)
+Based on their stated expected purchase quantity:
+- 500+ pieces per month: 15
+- 200-499 pieces per month: 12
+- 100-199 pieces per month: 8
+- 50-99 pieces per month: 5
+- Less than 50 pieces: 2
+
+Factor 7 — Trust Signals (10 points)
+- GST registered, shared GST number: 10
+- GST registered, not shared yet: 7
+- Not GST registered but business established: 5
+- New buyer, no documents yet: 4
+- Evasive about business details: 1
+
+TOTAL: 100 points
+
+SCORE CATEGORIES:
+75-100 = HOT LEAD (Green)
+  → Full catalog access immediately
+  → Personal call from sales within 2 hours
+  → Eligible for field visit
+  → Special first-order scheme offer
+  → Add to high priority follow-up queue
+
+50-74 = WARM LEAD (Amber)
+  → Limited catalog (top 20 designs only)
+  → WhatsApp nurture sequence starts
+  → Call within 24 hours
+  → No field visit until they show strong interest
+  → Standard follow-up queue
+
+Below 50 = COLD LEAD (Red)
+  → Broadcast only (general catalog)
+  → No personal follow-up from sales team
+  → No field staff engagement
+  → Auto nurture drip only
+  → Re-evaluate if they show interest
+
+SCORE CALCULATION:
+- Score auto-calculates when buyer registers
+- Score updates when more data is added
+- Score shown in admin panel with color coding
+- Score shown to sales team with recommendation
+
+SCORE CARD DISPLAY:
+Show breakdown like:
+Business Type: 12/15
+Online Presence: 10/15
+Location: 7/10
+Activity Level: 8/15
+Product Fit: 20/20
+Purchase Potential: 8/15
+Trust Signals: 7/10
+TOTAL: 72/100 — WARM LEAD ⬛
+
+ACTIONS BASED ON SCORE:
+When score calculated, automatically:
+1. Assign to correct lead bucket
+2. Add to appropriate WhatsApp sequence
+3. Notify relevant sales staff
+4. Schedule follow-up date in system

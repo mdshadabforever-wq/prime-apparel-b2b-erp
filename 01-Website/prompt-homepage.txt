@@ -1,0 +1,87 @@
+Build a professional B2B wholesale website homepage for 
+"Prime Apparel Exports" — a ladies ethnic wear wholesale 
+company based in Mumbai, sourcing from Surat.
+
+COMPANY DETAILS:
+- Name: Prime Apparel Exports
+- Tagline: "Surat Trends, Mumbai Discipline"
+- Products: Ladies kurtis and suit sets (wholesale only)
+- Target: Retailers, boutiques, online sellers across India
+- USP: Reliable supply, strict QC, WhatsApp-first service
+
+HOMEPAGE SECTIONS — build all of these:
+
+1. HERO SECTION
+   - Big headline: "India Ka Most Reliable Kurti & Suit 
+     Wholesale Partner"
+   - Sub-headline: "Surat ki variety, Mumbai ki quality 
+     control, WhatsApp pe instant service"
+   - Two buttons: 
+     "WhatsApp pe Catalog Maango" 
+     (links to wa.me/91XXXXXXXXXX)
+     "Register as Buyer" 
+     (links to /register page)
+   - Background: dark professional with fabric texture feel
+
+2. TRUST BADGES BAR
+   - "500+ Active Buyers"
+   - "100% QC Guaranteed"
+   - "GST Invoice Always"
+   - "Same Day Dispatch"
+   - "Pan India Delivery"
+
+3. WHO WE SERVE SECTION
+   Three cards:
+   - Local Retail Shops
+   - Online Sellers (Meesho, Instagram)
+   - Boutiques & Mini-Wholesalers
+   Each card has icon, title, 2-line description
+
+4. HOW IT WORKS — 4 STEPS
+   Step 1: WhatsApp pe message karo
+   Step 2: Catalog dekho, design choose karo
+   Step 3: Order confirm, payment karo
+   Step 4: 1-3 din mein dispatch
+   Show as horizontal step flow with icons
+
+5. FEATURED PRODUCTS SECTION
+   Grid of product cards (placeholder images for now)
+   Each card shows: product name, fabric, price range, 
+   minimum order, WhatsApp button
+
+6. WHY CHOOSE US — 6 POINTS
+   - Strict Quality Control
+   - Fast Dispatch
+   - Curated Designs Only
+   - Transparent Pricing
+   - WhatsApp Support 24/7
+   - GST Compliant
+
+7. TESTIMONIALS — 3 CARDS
+   Retailer name, city, short quote about reliability
+
+8. CALL TO ACTION SECTION
+   Dark background
+   "Ready to Order? WhatsApp karo abhi"
+   Big WhatsApp button
+
+9. FOOTER
+   - Company name, address, GST number
+   - Quick links: Catalog, Register, Contact, Policy
+   - Social media icons
+   - WhatsApp number prominent
+
+DESIGN REQUIREMENTS:
+- Color scheme: Dark navy or black with gold accent
+- Font: Professional, clean, readable on mobile
+- Mobile first — most buyers will view on phone
+- WhatsApp button must be visible on every scroll 
+  (floating button)
+- Fast loading — no heavy animations
+- Hindi and English mixed content is fine
+
+TECHNICAL:
+- HTML, CSS, JavaScript only
+- No framework needed for homepage
+- WhatsApp links open directly in WhatsApp app
+- All buttons and links must work

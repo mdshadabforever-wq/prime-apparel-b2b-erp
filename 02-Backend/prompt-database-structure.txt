@@ -1,0 +1,216 @@
+Design a complete database structure for Prime Apparel 
+Exports B2B wholesale management system.
+
+SYSTEM OVERVIEW:
+A wholesale company that sources ethnic wear from Surat, 
+does QC in Mumbai, sells to retailers pan-India via 
+WhatsApp and website.
+
+CREATE THESE TABLES / COLLECTIONS:
+
+TABLE 1 — BUYERS
+Fields:
+- buyer_id (unique auto)
+- full_name
+- mobile (WhatsApp number — primary identifier)
+- email
+- password_hash
+- business_name
+- business_type (retail/online/boutique/wholesaler)
+- gst_number
+- city
+- state
+- pincode
+- address
+- instagram_link
+- facebook_link
+- website_link
+- score (0-100, auto calculated)
+- lead_status (hot/warm/cold)
+- account_status (pending/approved/rejected/blocked)
+- credit_limit (default 0)
+- credit_days (default 0)
+- total_orders_count
+- total_orders_value
+- last_order_date
+- last_contact_date
+- next_followup_date
+- notes
+- registered_on
+- approved_on
+- referred_by
+
+TABLE 2 — PRODUCTS (SKU MASTER)
+Fields:
+- sku_id (e.g. PA-25-KR-001)
+- design_name
+- category (kurti/suit/festive/daily)
+- fabric (cotton/rayon/georgette/crepe)
+- color_options (array)
+- size_set (S/M/L/XL or free size)
+- length_cm
+- purchase_cost (per piece from supplier)
+- freight_per_piece
+- overhead_per_piece
+- landed_cost (auto calculated)
+- standard_price
+- scheme_price (bulk)
+- repeat_price
+- margin_percent (auto calculated)
+- qty_available
+- qty_reserved (orders not yet dispatched)
+- qty_sold_total
+- grade (A/B/C)
+- status (available/low_stock/out/discontinued)
+- supplier_id
+- created_date
+- last_updated
+- photo_urls (array of image links)
+- video_url
+- notes
+
+TABLE 3 — SUPPLIERS
+Fields:
+- supplier_id
+- supplier_name
+- city (Surat)
+- contact_person
+- mobile
+- whatsapp_number
+- email
+- speciality (cotton_kurti/rayon/festive etc)
+- rating (1-5)
+- written_terms_done (yes/no)
+- delivery_days_average
+- return_policy_notes
+- payment_terms
+- total_orders_count
+- total_orders_value
+- last_order_date
+- notes
+- status (active/inactive)
+
+TABLE 4 — PURCHASE ORDERS (from Surat)
+Fields:
+- purchase_order_id
+- supplier_id
+- order_date
+- expected_delivery_date
+- actual_delivery_date
+- items (array: sku, qty, rate)
+- total_quantity
+- total_purchase_value
+- freight_cost
+- total_landed_cost
+- payment_status (pending/paid/partial)
+- payment_date
+- grn_done (yes/no)
+- qc_done (yes/no)
+- notes
+
+TABLE 5 — SALES ORDERS (to buyers)
+Fields:
+- order_id (auto: date+serial e.g. 20250601-001)
+- buyer_id
+- order_date
+- items (array: sku_id, qty, price, subtotal)
+- total_qty
+- subtotal_amount
+- discount_amount
+- final_amount
+- gst_amount
+- invoice_amount
+- payment_terms (advance/7days/15days/30days)
+- payment_status (paid/partial/pending/overdue)
+- payment_received_amount
+- payment_received_date
+- order_status (confirmed/packed/dispatched/delivered/cancelled)
+- dispatch_date
+- transport_name
+- lr_number
+- expected_delivery_date
+- delivery_confirmed (yes/no)
+- delivery_date
+- feedback_rating (1-5)
+- feedback_notes
+- created_by (staff member)
+- notes
+
+TABLE 6 — CASH FLOW
+Fields:
+- entry_id
+- date
+- type (income/expense)
+- category (order_payment/purchase_cost/freight/
+           salary/rent/marketing/misc)
+- description
+- amount
+- reference_id (order_id or purchase_order_id)
+- created_by
+
+TABLE 7 — LEADS (before they become buyers)
+Fields:
+- lead_id
+- name
+- mobile
+- city
+- source (instagram/facebook/google/justdial/
+          whatsapp/website/reference)
+- business_type
+- score (0-100)
+- status (new/contacted/interested/registered/lost)
+- notes
+- created_date
+- last_contact_date
+- assigned_to (staff)
+
+TABLE 8 — STAFF / USERS
+Fields:
+- staff_id
+- name
+- mobile
+- email
+- password_hash
+- role (admin/purchase/inventory/sales/accounts/content)
+- permissions (array)
+- status (active/inactive)
+
+TABLE 9 — WHATSAPP MESSAGES LOG
+Fields:
+- message_id
+- contact_number
+- direction (incoming/outgoing)
+- message_type (text/image/document/button)
+- message_content
+- template_name (if automated)
+- status (sent/delivered/read/failed)
+- timestamp
+- handled_by (ai/human/staff_id)
+- linked_to (buyer_id or lead_id)
+
+TABLE 10 — NOTIFICATIONS
+Fields:
+- notification_id
+- type (low_stock/overdue_payment/new_lead/
+        dispatch_due/order_received)
+- message
+- linked_to_id
+- status (unread/read)
+- created_at
+- for_role (admin/accounts/inventory/sales)
+
+RELATIONSHIPS:
+- Every sales order links to buyer
+- Every sales order item links to SKU
+- Every purchase order links to supplier
+- Every SKU links to supplier
+- Every cash flow entry links to order or purchase
+- Every WhatsApp message links to buyer or lead
+
+BUSINESS RULES TO ENFORCE:
+- Stock qty cannot go below 0
+- Order cannot be created if stock not available
+- Invoice cannot be generated without payment terms set
+- Dispatch cannot happen without invoice generated
+- Credit order cannot exceed buyer's credit limit
+- Overdue payment alerts auto-trigger after due date

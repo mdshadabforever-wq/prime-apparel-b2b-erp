@@ -1,0 +1,167 @@
+Build a complete notification and alert system for 
+Prime Apparel Exports.
+
+ALL NOTIFICATIONS ARE SENT VIA WHATSAPP to staff numbers.
+Use WhatsApp Business API (same as customer bot).
+
+NOTIFICATION TYPES AND TRIGGERS:
+
+SALES NOTIFICATIONS:
+→ Send to: Sales team WhatsApp
+
+1. New hot lead registered
+   Trigger: Lead score above 75
+   Message: 
+   "🔥 New HOT Lead!
+   Name: [name]
+   City: [city]
+   Business: [type]
+   Score: [X]/100
+   Mobile: [number]
+   
+   Catalog bhej do abhi! 
+   Dashboard: [link]"
+
+2. New order received
+   Trigger: Order confirmed in system
+   Message:
+   "🎉 New Order!
+   Order: [ID]
+   Buyer: [name], [city]
+   Amount: ₹[amount]
+   Items: [count] designs
+   
+   Inventory ko forward kar do.
+   Dashboard: [link]"
+
+3. Warm lead went inactive
+   Trigger: Warm lead, no contact for 7 days
+   Message:
+   "⏰ Follow-up Needed!
+   [Name] - [City]
+   [Business type]
+   Last contact: [X] days ago
+   
+   Ek WhatsApp bhejo aaj!"
+
+INVENTORY NOTIFICATIONS:
+→ Send to: Inventory team WhatsApp
+
+4. Low stock alert
+   Trigger: SKU qty drops below 10 pieces
+   Message:
+   "📦 Low Stock Alert!
+   SKU: [code]
+   Design: [name]
+   Remaining: [X] pieces
+   
+   Purchase team ko inform karo.
+   Reorder needed?"
+
+5. New purchase order to receive
+   Trigger: Supplier dispatch confirmed
+   Message:
+   "🚚 Maal Aa Raha Hai!
+   Supplier: [name]
+   Expected: [date]
+   Designs: [count]
+   Total pieces: [count]
+   
+   GRN + QC ready rakho!"
+
+ACCOUNTS NOTIFICATIONS:
+→ Send to: Accounts team WhatsApp
+
+6. Payment due today
+   Trigger: Every morning 9am, check due payments
+   Message:
+   "💰 Payment Due Today!
+   [Buyer name] - [City]
+   Order: [ID]
+   Amount: ₹[amount]
+   Due since: [date]
+   
+   Reminder bheja? Dashboard: [link]"
+
+7. Payment overdue (7+ days late)
+   Trigger: Payment 7 days past due date
+   Message:
+   "🔴 OVERDUE Payment!
+   [Buyer name] - [City]
+   Amount: ₹[amount]
+   Overdue by: [X] days
+   
+   URGENT: Escalate to founder.
+   No new orders to this buyer until cleared."
+
+8. Payment received
+   Trigger: Payment marked as received
+   Message:
+   "✅ Payment Received!
+   [Buyer name]
+   Amount: ₹[amount]
+   Order: [ID]
+   
+   Accounts update karo!"
+
+FOUNDER / ADMIN NOTIFICATIONS:
+→ Send to: Founder WhatsApp
+
+9. Daily summary (every evening 7pm)
+   Message:
+   "📊 Daily Report - [date]
+   
+   Orders Today: [count] | ₹[amount]
+   New Leads: [count] (Hot: [x])
+   Dispatched: [count] orders
+   Payment Received: ₹[amount]
+   Overdue Payments: [count]
+   
+   Full report: [dashboard link]"
+
+10. Weekly summary (every Monday 9am)
+    Message:
+    "📈 Weekly Summary - Week [X]
+    
+    Revenue: ₹[amount] ([±%] vs last week)
+    Orders: [count]
+    New Buyers: [count]
+    Repeat Orders: [X]%
+    
+    Top Seller: [SKU name]
+    Needs Attention: [X overdue payments]
+    
+    Dashboard: [link]"
+
+11. Critical alert (immediate)
+    Triggers:
+    - Any complaint received
+    - Payment dispute
+    - Very large order above ₹1 lakh
+    - System error
+    
+    Message format varies by trigger.
+
+BUYER NOTIFICATIONS (automated to buyers):
+These go to buyers from the WhatsApp bot.
+
+12. Order confirmation
+13. Dispatch notification with LR
+14. Payment reminder (3 days before due)
+15. Payment overdue reminder
+16. New catalog available (broadcast)
+17. Seasonal offer announcement (broadcast)
+
+NOTIFICATION SETTINGS:
+- Admin can enable/disable each notification type
+- Can change recipient numbers for each type
+- Can change timing (immediate vs daily digest)
+- Cannot disable critical alerts (overdue, complaints)
+- Quiet hours: No non-critical notifications 
+  between 10pm and 8am
+
+NOTIFICATION LOG:
+- All notifications logged in admin panel
+- Show: type, recipient, time, delivery status
+- Searchable and filterable
+- Last 90 days history

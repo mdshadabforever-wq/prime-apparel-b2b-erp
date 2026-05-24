@@ -1,0 +1,69 @@
+Build a B2B product catalog page for Prime Apparel Exports 
+wholesale website.
+
+PAGE PURPOSE:
+Registered buyers login and see available stock with photos, 
+prices, and order buttons. Non-registered visitors see a 
+"Register to view prices" message.
+
+CATALOG PAGE FEATURES:
+
+1. TOP FILTER BAR
+   Filter by:
+   - Category: Kurti / Suit Set / Festive / Daily Wear
+   - Fabric: Cotton / Rayon / Georgette / Crepe
+   - Price Band: Budget / Mid / Premium
+   - Availability: In Stock / Pre-Order
+   - Search bar: type SKU code or design name
+
+2. PRODUCT GRID
+   Each product card shows:
+   - Product photo (front view)
+   - SKU Code (e.g. PA-25-KR-001)
+   - Design name
+   - Fabric type
+   - Available sizes (S/M/L/XL)
+   - Available colors
+   - Wholesale price per piece
+   - Minimum order quantity
+   - Stock status badge (In Stock / Low Stock / Out)
+   - "Add to Enquiry" button
+   - "WhatsApp to Order" button
+
+3. PRODUCT DETAIL POPUP
+   When any product clicked:
+   - Multiple photos (front, back, detail close-up)
+   - Full specifications table
+   - Size chart
+   - MRP suggestion for retailers
+   - Bulk pricing table:
+     12-24 pcs = Standard price
+     25-49 pcs = Scheme price
+     50+ pcs = Best price
+   - Similar products section
+   - "Send Enquiry" form with quantity field
+
+4. ENQUIRY CART
+   Buyer can add multiple products to enquiry
+   Side panel shows:
+   - Products selected
+   - Quantities
+   - Estimated total
+   - "Send to WhatsApp" button that creates 
+     pre-filled WhatsApp message with order details
+
+5. NON-LOGGED-IN VIEW
+   Show product images but blur the prices
+   Show: "Register as buyer to see wholesale prices"
+   Registration button prominent
+
+6. PAGINATION
+   Show 24 products per page
+   Load more button at bottom
+
+DESIGN:
+- Clean grid layout
+- Product photos are most important — make them large
+- Mobile responsive — single column on phone
+- Filter bar sticks to top while scrolling
+- WhatsApp button always visible

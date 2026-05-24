@@ -1,0 +1,264 @@
+Build a complete WhatsApp chatbot flow for Prime Apparel 
+Exports B2B wholesale business.
+
+PLATFORM: Interakt or Wati API (WhatsApp Business API)
+
+BUSINESS CONTEXT:
+- Company sells ladies kurtis and suit sets wholesale
+- Target buyers: retailers, boutiques, online sellers
+- All leads from all platforms come to WhatsApp
+- Bot handles first line, human handles complex cases
+
+BOT PERSONALITY:
+- Name: Prime Assistant
+- Tone: Professional but warm, Hindi-English mixed
+- Never sounds robotic — friendly and helpful
+- Always offers human support option
+
+COMPLETE CONVERSATION FLOWS:
+
+FLOW 1 — NEW VISITOR (unknown number)
+
+Message 1 (Welcome):
+"Namaste! 🙏 Prime Apparel Exports mein aapka 
+swagat hai.
+
+Hum ladies kurtis aur suit sets ke B2B wholesale 
+suppliers hain — Surat sourcing, Mumbai QC.
+
+Aap kya jaanna chahte hain?
+
+1️⃣ Catalog dekhna hai
+2️⃣ Prices jaanna hai
+3️⃣ Sample order karna hai
+4️⃣ Company ke baare mein jaanna hai
+5️⃣ Kuch aur poochna hai"
+
+If buyer types 1 or "catalog":
+→ Go to FLOW 2 (Catalog Request)
+
+If buyer types 2 or "price":
+→ Go to FLOW 3 (Price Inquiry)
+
+If buyer types 3 or "sample" or "order":
+→ Go to FLOW 4 (Order Intent)
+
+If buyer types 4 or "about":
+→ Send company info message + website link
+
+If buyer types 5 or anything else:
+→ Go to FLOW 7 (General Query)
+
+FLOW 2 — CATALOG REQUEST
+
+Step 1:
+"Bilkul! Catalog bhejne se pehle ek-do 
+sawalon ke jawab dijiye:
+
+Aapki city kya hai?"
+
+Wait for reply → save city to lead profile
+
+Step 2:
+"Shukriya! Aap kya bechte hain?
+
+1️⃣ Retail shop hai mera
+2️⃣ Online seller hoon (Meesho/Instagram)
+3️⃣ Boutique hai
+4️⃣ Wholesale karta hoon
+5️⃣ Kuch aur"
+
+Wait for reply → save business type → 
+calculate initial score
+
+Step 3:
+"Perfect! Aapko kaun si category mein 
+zyada interest hai?
+
+1️⃣ Cotton Daily Wear Kurtis
+2️⃣ 3-Piece Suit Sets
+3️⃣ Festive/Occasion Wear
+4️⃣ Sab dikhaiye"
+
+Based on selection → send relevant catalog PDF
+
+After catalog sent:
+"Catalog mil gayi na? 📁
+
+Koi design pasand aaya to directly 
+SKU code batayein — hum stock aur 
+price confirm karenge.
+
+Ya seedha order ke liye:
+👉 Minimum order 12 pieces per design
+👉 Payment: Advance for first order
+👉 Dispatch: 1-3 business days
+
+Koi sawaal? Type karo! 😊"
+
+FLOW 3 — PRICE INQUIRY
+
+"Hamari wholesale pricing structure:
+
+📦 Cotton Kurtis: ₹280-420/piece
+📦 Rayon Kurtis: ₹320-480/piece  
+📦 Suit Sets: ₹380-580/set
+📦 Festive Collection: ₹450-750/set
+
+Yeh landed prices hain Mumbai se.
+
+Bulk pricing:
+✅ 12-24 pcs: Standard rate
+✅ 25-49 pcs: 3% extra discount
+✅ 50+ pcs: 5% extra discount
+
+Exact price kisi specific design ke liye 
+jaanni hai? SKU code ya design type batayein."
+
+FLOW 4 — ORDER INTENT
+
+Step 1: Qualify the buyer
+"Badiya! Order karne se pehle:
+
+Pehle order hai hamare saath ya pehle 
+se registered buyer hain?
+
+1️⃣ Pehli baar order karna hai
+2️⃣ Already registered buyer hoon"
+
+If new buyer → collect details → 
+send to registration page
+If existing → verify mobile → show their account
+
+FLOW 5 — EXISTING BUYER (registered number)
+
+Auto-detect if number is in buyer database.
+If yes, skip qualification and say:
+
+"Namaste [Buyer Name]! 👋
+Welcome back!
+
+Aapka last order: [date] - [amount]
+Account status: Active ✅
+
+Kya karna hai aaj?
+1️⃣ New catalog dekhna hai
+2️⃣ Order karna hai
+3️⃣ Order status check karna hai
+4️⃣ Payment karna hai
+5️⃣ Kuch aur"
+
+FLOW 6 — ORDER STATUS CHECK
+
+"Order ID batayein ya hum 
+last order dhundhte hain?"
+
+If order ID given → fetch from database →
+"Aapka order [ID]:
+📋 Status: Dispatched ✅
+🚚 Transport: [name]
+📦 LR Number: [number]
+📅 Expected delivery: [date]
+
+Koi problem hai delivery mein? 
+Batayein hum help karenge."
+
+FLOW 7 — GENERAL QUERY / UNKNOWN
+
+Pass message content to AI agent.
+AI agent reads FAQ database and replies.
+
+If AI confidence low (below 70%):
+→ Escalate to human
+
+Escalation message:
+"Yeh sawaal hamari team better answer 
+kar sakti hai.
+
+Hamara representative 
+[next business hours] tak respond karega.
+
+Ya agar urgent hai:
+📞 Call karo: [number]
+
+Tab tak kya main kuch aur help 
+kar sakta hoon?"
+
+FLOW 8 — COMPLAINT / ISSUE
+
+"Aapki baat sun raha hoon. 
+Kya hua exactly?
+
+1️⃣ Wrong item aaya
+2️⃣ Quality issue hai
+3️⃣ Delivery nahi hui
+4️⃣ Payment related issue
+5️⃣ Kuch aur"
+
+All complaint flows → immediately 
+escalate to human + send alert to admin
+
+FLOW 9 — PAYMENT REMINDER (outgoing, automated)
+
+Trigger: Payment due date aane pe
+
+"Namaste [Name]! 😊
+Prime Apparel Exports ki taraf se.
+
+Aapka invoice [ID] ka payment 
+due hai:
+
+💰 Amount: ₹[amount]
+📅 Due date: [date]
+
+Payment options:
+🏦 Bank transfer: [account details]
+📱 UPI: [UPI ID]
+
+Payment ho gayi ho to 
+screenshot bhej do — 
+hum turant update kar denge.
+
+Koi problem hai? Batayein! 🙏"
+
+FLOW 10 — DISPATCH NOTIFICATION (outgoing, automated)
+
+Trigger: Order marked as dispatched
+
+"Khushkhabri! 🎉 [Name] ji,
+
+Aapka order [ID] dispatch ho gaya!
+
+📦 Items: [item list]
+🚚 Transport: [name]
+🔢 LR Number: [number]  
+📅 Expected delivery: [date]
+📸 [Packing photo attached]
+
+Koi sawaal? WhatsApp karo! 😊
+— Team Prime Apparel"
+
+ESCALATION RULES:
+Auto-escalate to human when:
+- Buyer explicitly asks for human
+- Order value above ₹50,000
+- Complaint received
+- AI confidence below 70%
+- 3 consecutive messages not understood
+- Payment dispute mentioned
+
+When escalating:
+- Tag conversation as "needs human"
+- Send alert to sales staff WhatsApp
+- Tell buyer expected response time
+- Keep conversation context for human
+
+HUMAN HANDOFF MESSAGE:
+"Aapki baat hamari team 
+tak pahuncha raha hoon.
+
+[Staff name] aapko 
+[X minutes] mein reply karenge.
+
+Aapka reference number: [ID]
+Yeh save kar lo agar zaroorat pade."

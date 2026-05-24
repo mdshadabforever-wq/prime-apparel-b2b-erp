@@ -1,0 +1,174 @@
+Build the AI knowledge brain for Prime Apparel Exports 
+WhatsApp AI Agent.
+
+This AI agent reads three knowledge sources and answers 
+buyer questions intelligently:
+
+SOURCE 1 — FAQ DATABASE
+
+Build a system where admin can add, edit, delete FAQs.
+The AI reads these FAQs to answer questions.
+
+Initial FAQ list to load:
+
+CATEGORY: ORDERING
+Q: Minimum order kitna hai?
+A: Minimum 12 pieces per design hai. Alag alag 
+   designs mein mix kar sakte hain, lekin ek 
+   design mein minimum 12 pieces chahiye.
+
+Q: Kya pieces mix kar sakte hain?
+A: Haan, alag designs mix ho sakti hain, 
+   lekin ek design ka minimum 12 pieces 
+   hona zaroori hai.
+
+Q: Sample piece milega?
+A: Abhi hum single piece nahi bhejte. 
+   Minimum 12 pieces se shuru hota hai.
+   Lekin hamare catalog mein photos aur 
+   videos hain jo quality clearly dikhate hain.
+
+CATEGORY: PRICING
+Q: Price negotiation hoti hai?
+A: Hamari prices already competitive hain. 
+   Bulk orders pe scheme milti hai:
+   25-49 pcs: 3% discount
+   50+ pcs: 5% discount
+   Isse zyada discount nahi hoti kyunki 
+   hum quality se compromise nahi karte.
+
+Q: GST alag lagega?
+A: Haan, GST applicable rates pe alag 
+   lagega. Invoice mein clearly mention 
+   hoga. GST registered buyers ke liye 
+   input credit available hai.
+
+CATEGORY: PAYMENT
+Q: Payment kaise karni hai?
+A: First order mein 100% advance payment.
+   Options: Bank Transfer, NEFT, UPI.
+   Details order confirm karte waqt share 
+   kiye jaate hain.
+
+Q: Credit milta hai?
+A: Pehle 2 orders advance only.
+   3rd order ke baad track record dekh ke 
+   7 din credit consider kiya jaata hai.
+   Credit GST registered aur regular buyers 
+   ko hi milta hai.
+
+Q: COD available hai?
+A: COD available nahi hai B2B wholesale mein.
+   Advance ya credit (eligible buyers ke liye) 
+   only.
+
+CATEGORY: DELIVERY
+Q: Delivery kitne din mein aati hai?
+A: Mumbai: 1-2 business days
+   Maharashtra: 2-3 business days
+   North India: 3-5 business days
+   South India: 4-6 business days
+   Northeast: 5-7 business days
+   These are estimates, may vary.
+
+Q: Transport charges kitne hain?
+A: ₹500+ orders pe free delivery most locations.
+   Exact amount order confirm karte waqt bataya 
+   jaata hai based on weight and location.
+
+Q: Tracking kaise karein?
+A: Dispatch ke turant baad LR number WhatsApp 
+   pe share kiya jaata hai.
+   Transport company website pe track kar sakte 
+   hain, ya hum se poochhein.
+
+CATEGORY: QUALITY
+Q: Quality guarantee hai?
+A: Haan. Har lot 100% Mumbai mein QC hota hai.
+   Photo mein jo dikhta hai wahi milta hai.
+   Size consistency check hoti hai.
+   Fabric aur stitching inspect hoti hai.
+
+Q: Agar quality sahi na ho?
+A: Delivery ke 48 ghante ke andar photo ke 
+   saath report karo.
+   Manufacturing defect pe replacement ya 
+   credit note milega.
+   Kisi bhi issue pe WhatsApp karo turant.
+
+Q: Return policy kya hai?
+A: Manufacturing defects: Full replacement
+   Damaged in transit: Transport claim + 
+   replacement support
+   Wrong item sent: Free replacement + 
+   return pickup
+   Buyer change of mind: Not accepted 
+   (wholesale policy)
+
+CATEGORY: REGISTRATION
+Q: Registration kyun zaroori hai?
+A: Wholesale prices sirf registered verified 
+   buyers ko show hoti hain.
+   Registration se dedicated service milti hai.
+   Order history, invoices, account management 
+   sab available hota hai.
+
+Q: Registration kitne din mein approve hoti hai?
+A: Usually 24 hours mein. 
+   Business details verify karte hain.
+   Approval ya rejection WhatsApp pe bataya 
+   jaata hai.
+
+CATEGORY: PRODUCTS
+Q: Kaunse fabrics available hain?
+A: Currently available:
+   - Cotton (daily wear, summer)
+   - Rayon (year-round)
+   - Georgette (festive, party)
+   - Crepe (office, semi-formal)
+   - Cotton Linen blend (premium daily)
+   New fabrics regularly add hote hain.
+
+Q: Seasonal collections kab aati hain?
+A: Summer cotton: February-March
+   Festive (Navratri/Diwali): July-August
+   Wedding season: October-November
+   Winter collection: September-October
+   WhatsApp list mein rehne par 
+   pehle inform kiya jaata hai.
+
+SOURCE 2 — LIVE STOCK DATA
+AI should be able to query:
+- Is SKU X available?
+- How many pieces of SKU Y are left?
+- What categories are currently in stock?
+- Which designs are low stock?
+
+Connect to Products table in database.
+Return real-time data in conversational way.
+
+SOURCE 3 — BUYER HISTORY
+For registered buyers, AI should know:
+- Their name and city
+- Last order date and items
+- Outstanding payment (if any)
+- Their credit limit and status
+
+Use this to personalize every response.
+Registered buyer gets personal greeting.
+If they have overdue payment, mention it 
+politely before processing new order.
+
+AI BEHAVIOR RULES:
+1. Always answer in same language as question
+   (Hindi question = Hindi answer,
+    English question = English answer,
+    Mixed = Mixed)
+2. Keep answers short — max 5-6 lines
+3. Always end with a helpful next step
+4. Never make up information not in FAQ
+5. If unsure, say "Yeh main check karke 
+   batata hoon" and escalate
+6. Never discuss competitor pricing
+7. Never promise discounts not in system
+8. Always be polite even if buyer is rude

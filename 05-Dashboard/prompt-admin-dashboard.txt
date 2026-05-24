@@ -1,0 +1,148 @@
+Build a complete admin dashboard for Prime Apparel Exports 
+internal management system.
+
+WHO USES THIS:
+- Founder / Owner: sees everything
+- Sales team: sees buyers, leads, orders
+- Inventory team: sees stock only
+- Accounts team: sees orders, payments, cash flow
+
+DASHBOARD SECTIONS:
+
+1. TOP KPI BAR (visible to all roles)
+Show live numbers:
+- Today's orders received
+- Today's revenue
+- This month's revenue
+- Active buyers count
+- Hot leads waiting
+- Low stock alerts
+- Overdue payments count
+- Pending dispatches
+
+Each KPI is clickable — goes to detailed view.
+
+2. MAIN DASHBOARD TABS:
+
+TAB 1 — OVERVIEW (Founder only)
+- Revenue chart: last 30 days bar chart
+- Orders chart: last 30 days line chart
+- Top 5 selling SKUs this month
+- Top 5 buyers by order value this month
+- Stock health summary:
+  Available | Low Stock | Out of Stock count
+- Cash position:
+  Bank balance (manual entry) | 
+  Receivables | Payables
+
+TAB 2 — ORDERS
+Table with filters: Date / Status / Buyer / Amount
+Columns: Order ID | Date | Buyer | Items | Amount | 
+         Payment | Status | Action
+Actions: View details | Mark dispatched | 
+         Generate invoice | Track shipment
+Color coding:
+- Green row: Paid + dispatched
+- Yellow row: Paid, pending dispatch
+- Orange row: Dispatched, payment pending
+- Red row: Overdue payment
+
+TAB 3 — BUYERS
+Table with search and filters
+Columns: Name | City | Business Type | Score | 
+         Status | Last Order | Total Value | Action
+Filters: Hot/Warm/Cold | Active/Pending | City
+Actions: View profile | Add note | Change status |
+         Send WhatsApp | View order history
+
+Buyer profile page shows:
+- All their details from registration
+- Score card breakdown
+- Complete order history
+- WhatsApp conversation log
+- Notes timeline
+- Payment history
+
+TAB 4 — STOCK
+Table: SKU | Design | Fabric | Available | 
+       Reserved | Price | Status
+Filters: Category | Fabric | Status | Low stock only
+Actions: Update qty | Edit price | View history |
+         Mark discontinued
+
+Quick actions:
+- "Low Stock" button: shows all items below 10 pcs
+- "Dead Stock" button: shows items with no sale in 60 days
+
+TAB 5 — LEADS
+Table: Name | Mobile | Source | Score | Status | 
+       Last Contact | Action
+Filters: Hot/Warm/Cold | Source | Date range
+Actions: Convert to buyer | Assign to staff |
+         Send WhatsApp | Add note | Mark lost
+
+Daily lead report visible:
+New leads today: X
+Contacted today: X  
+Converted this week: X
+
+TAB 6 — ANALYTICS
+(Founder and admin only)
+- Monthly revenue trend (12 months)
+- Category-wise sales pie chart
+- City-wise buyer heatmap
+- Repeat vs new buyer ratio
+- Average order value trend
+- Best performing designs
+- Supplier performance comparison
+- Margin analysis by category
+
+TAB 7 — CASH FLOW
+Accounts team access:
+- Income vs expense bar chart (monthly)
+- Receivables aging:
+  0-7 days | 7-30 days | 30-60 days | 60+ days
+- Payment due calendar
+- Quick entry: Add income / Add expense
+- Export to Excel button
+
+TAB 8 — WHATSAPP CENTER
+All WhatsApp conversations:
+- Inbox: all active conversations
+- Hot: conversations needing immediate reply
+- Bot handled: conversations AI resolved
+- Escalated: conversations waiting for human
+- Quick reply templates
+- Broadcast: send message to buyer group
+
+3. NOTIFICATIONS PANEL (top right)
+Real-time alerts:
+🔴 New hot lead registered
+🟡 Order overdue for dispatch
+🔴 Payment overdue: [buyer] - [amount]
+🟡 Stock low: [SKU] - only [X] pieces left
+🟢 Payment received: [buyer] - [amount]
+🟢 New order confirmed: [buyer] - [amount]
+
+4. QUICK ACTIONS BAR
+- Add new order (manual)
+- Add stock entry
+- Send WhatsApp broadcast
+- Generate invoice
+- Mark payment received
+
+ROLES AND PERMISSIONS:
+Admin: Everything
+Founder: Everything
+Sales: Buyers, Leads, Orders (view only), 
+       WhatsApp center
+Inventory: Stock tab, Purchase orders
+Accounts: Cash flow, Invoices, Payments
+Content: No dashboard, separate content panel
+
+DESIGN:
+- Dark sidebar with icon navigation
+- Clean white content area
+- Mobile responsive
+- Color coded status everywhere
+- Load fast — no heavy charts on mobile

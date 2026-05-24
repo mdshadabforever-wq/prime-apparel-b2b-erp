@@ -1,0 +1,71 @@
+Build a two-way sync system between this web application 
+and Google Sheets for Prime Apparel Exports.
+
+WHY NEEDED:
+The business owner and small team currently use Google 
+Sheets for daily operations. They need Google Sheets 
+to stay updated automatically from the website system, 
+AND changes in Sheets should reflect in the main system.
+
+GOOGLE SHEETS STRUCTURE TO SYNC:
+
+Sheet 1 — Buyers Tab
+Sync these columns:
+Buyer ID | Name | Mobile | City | Business Type | 
+Score | Lead Status | Last Order Date | Total Value | 
+Account Status
+
+Sync direction: BOTH WAYS
+- New buyer on website → auto-add row in Sheets
+- Status change in Sheets → update website database
+- Score changes in website → update Sheets
+
+Sheet 2 — Stock Tab
+Sync these columns:
+SKU | Design Name | Fabric | Qty Available | 
+Status | Standard Price | Last Updated
+
+Sync direction: FROM WEBSITE TO SHEETS (one way)
+- Every stock change on website → update Sheets
+- Sheets is read-only for stock (changes only on website)
+
+Sheet 3 — Orders Tab
+Sync these columns:
+Order ID | Date | Buyer Name | Items | 
+Total Amount | Payment Status | Dispatch Date | LR Number
+
+Sync direction: FROM WEBSITE TO SHEETS
+- New order confirmed → new row in Sheets
+- Status updates → update that row
+
+Sheet 4 — Cash Flow Tab
+Sync these columns:
+Date | Description | Category | Income | Expense | Balance
+
+Sync direction: FROM WEBSITE TO SHEETS
+- Every payment received → new income row
+- Every purchase made → new expense row
+- Balance auto-calculated
+
+HOW SYNC SHOULD WORK:
+1. Real-time sync: any change triggers immediate update
+2. If real-time fails: queue it and retry in 5 minutes
+3. Show sync status in admin dashboard: 
+   "Last synced: 2 minutes ago"
+4. If sync error: send WhatsApp alert to admin
+
+ADDITIONAL FEATURES:
+- Admin can manually trigger full sync anytime
+- Sync log: show last 50 sync events with status
+- Handle conflicts: if same field changed in both 
+  places, website data wins, but log the conflict
+
+GOOGLE SHEETS ACCESS:
+- Use Google Sheets API with service account
+- OAuth authentication for initial setup
+- Admin provides their Google Sheet ID in settings
+
+ERROR HANDLING:
+- If Google Sheets API is down: queue all changes
+- Send daily sync summary to admin on WhatsApp:
+  "Today: 45 rows synced, 0 errors"
