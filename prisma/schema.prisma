@@ -16,6 +16,11 @@ model Buyer {
   business_name      String
   business_type      String        @default("OTHER") // OFFLINE_RETAIL, ONLINE_SELLER, BOUTIQUE, MINI_WHOLESALER, OTHER
   gst_number         String?
+  buyer_type         String        @default("NON_GST") // GST, NON_GST
+  pan_or_aadhaar     String?
+  gst_legal_name     String?
+  gst_address        String?
+  gst_filing_status  String?
   city               String
   state              String
   pincode            String
@@ -141,6 +146,14 @@ model SalesOrder {
   feedback_notes           String?
   created_by               String        // staff member name or automated
   notes                    String?
+  invoice_type             String        @default("B2C") // B2B, B2C
+  due_date                 DateTime?
+  awb_number               String?
+  shipment_id              String?
+  pod_url                  String?
+  pod_signature            String?
+  parent_order_id          String?
+  terms_accepted           Boolean       @default(false)
   cash_flow_entries        CashFlow[]
 }
 
@@ -209,4 +222,13 @@ model Notification {
   status          String   @default("unread") // unread, read
   created_at      DateTime @default(now())
   for_role        String   @default("SALES") // ADMIN, FOUNDER, SALES, INVENTORY, ACCOUNTS
+}
+
+model AuditLog {
+  log_id      Int      @id @default(autoincrement())
+  timestamp   DateTime @default(now())
+  user_name   String
+  action      String
+  description String
+  linked_id   String?
 }

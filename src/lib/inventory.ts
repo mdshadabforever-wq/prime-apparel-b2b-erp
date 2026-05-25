@@ -47,16 +47,25 @@ export async function checkOrderFeasibility(
   const gstAmount = Math.round(finalAmount * 0.05); // 5% B2B ethnic apparel GST
   const invoiceAmount = finalAmount + gstAmount;
 
-  // 3. Credit limit validation (if credit payment is chosen)
+  // 3. Buyer status and Credit limit validation
+  const buyer = await db.buyer.findUnique({
+    where: { buyer_id: buyerId }
+  });
+
+  if (!buyer) {
+    return { allowed: false, reason: "Buyer account system mein nahi mila.", subtotal: 0, finalAmount: 0, gstAmount: 0, invoiceAmount: 0 };
+  }
+
+  // Block checkouts if account is locked or blocked due to overdue invoices
+  if (buyer.account_status === "LOCKED_CREDIT" || buyer.account_status === "BLOCKED") {
+    return {
+      allowed: false,
+      reason: "Checkout Blocked: Please clear your previous outstanding dues to generate a new invoice.",
+      subtotal: 0, finalAmount: 0, gstAmount: 0, invoiceAmount: 0
+    };
+  }
+
   if (paymentTerms !== "advance") {
-    const buyer = await db.buyer.findUnique({
-      where: { buyer_id: buyerId }
-    });
-
-    if (!buyer) {
-      return { allowed: false, reason: "Buyer account system mein nahi mila.", subtotal: 0, finalAmount: 0, gstAmount: 0, invoiceAmount: 0 };
-    }
-
     // Advance payment required for first 2 orders check
     if (buyer.total_orders_count < 2) {
       return {
@@ -66,12 +75,28 @@ export async function checkOrderFeasibility(
       };
     }
 
-    // Check credit limits
-    const outstandingDebt = buyer.total_orders_value - buyer.total_orders_value; // In a real ledger, this checks outstanding unpaid sales invoices
+    // Query active unpaid orders to compute actual outstanding debt penny-perfectly
+    const unpaidOrders = await db.salesOrder.findMany({
+      where: {
+        buyer_id: buyerId,
+        payment_status: { not: "paid" },
+        order_status: { not: "cancelled" }
+      },
+      select: {
+        invoice_amount: true,
+        payment_received_amount: true
+      }
+    });
+
+    const outstandingDebt = unpaidOrders.reduce(
+      (sum, o) => sum + (o.invoice_amount - o.payment_received_amount),
+      0
+    );
+
     if (invoiceAmount + outstandingDebt > buyer.credit_limit) {
       return {
         allowed: false,
-        reason: `Credit Limit exceeded! Invoice value (₹${invoiceAmount}) aapki safe credit limit (₹${buyer.credit_limit}) ko cross kar rahi hai. Advance choose karein.`,
+        reason: `Credit Limit exceeded! Current Invoice (₹${invoiceAmount}) + Outstanding Dues (₹${outstandingDebt}) equals ₹${invoiceAmount + outstandingDebt}, which exceeds your safe credit limit (₹${buyer.credit_limit}). Please select 'advance' payment or clear outstanding balances.`,
         subtotal: 0, finalAmount: 0, gstAmount: 0, invoiceAmount: 0
       };
     }

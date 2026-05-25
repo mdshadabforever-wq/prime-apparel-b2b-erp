@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { releaseInventory } from "@/lib/inventory";
+import { createShiprocketShipment } from "@/lib/shiprocket";
 
 // GET: Fetch order details with buyer relationship
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -102,6 +103,33 @@ export async function PUT(request: Request, { params }: { params: { id: string }
           buyer_id: order.buyer_id
         }
       });
+    } else if (orderStatus === "packed") {
+      // Auto-trigger Shiprocket shipment registration
+      try {
+        console.log(`[Shiprocket Automation] Initializing cargo sync for: ${orderId}`);
+        const shipmentResult = await createShiprocketShipment(order);
+        if (shipmentResult.success) {
+          await db.salesOrder.update({
+            where: { order_id: orderId },
+            data: {
+              awb_number: shipmentResult.awbNumber,
+              shipment_id: String(shipmentResult.shipmentId)
+            }
+          });
+          
+          // Log Audit entry for auto-shipment
+          await db.auditLog.create({
+            data: {
+              user_name: "Automated Shipping Integration",
+              action: "SHIPMENT_CREATE",
+              description: `Registered ad-hoc parcel booking on Shiprocket. AWB: ${shipmentResult.awbNumber}, Shipment ID: ${shipmentResult.shipmentId}, Carrier: ${shipmentResult.carrier}`,
+              linked_id: orderId
+            }
+          });
+        }
+      } catch (shErr: any) {
+        console.error("Shiprocket adhoc creation failed:", shErr);
+      }
     } else if (orderStatus === "delivered") {
       // Just flag delivery confirmed
       await db.salesOrder.update({
@@ -126,13 +154,19 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       });
     }
 
-    const updated = await db.salesOrder.update({
-      where: { order_id: orderId },
-      data: {
-        order_status: orderStatus,
-        notes: notes || order.notes
-      }
+    const updated = await db.salesOrder.findUnique({
+      where: { order_id: orderId }
     });
+
+    if (updated) {
+      await db.salesOrder.update({
+        where: { order_id: orderId },
+        data: {
+          order_status: orderStatus,
+          notes: notes || updated.notes
+        }
+      });
+    }
 
     // Log Notification for staff
     await db.notification.create({

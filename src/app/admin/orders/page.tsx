@@ -1,20 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  ShoppingCart,
-  Truck,
-  DollarSign,
-  FileText,
-  Plus,
-  X,
-  Search,
-  Filter,
-  CheckCircle,
-  AlertTriangle,
-  Clock,
-  Sparkles
-} from "lucide-react";
+// Use namespace import for icons to avoid missing chunks.
+import * as LucideIcons from "lucide-react";
+const { ShoppingCart, Truck, DollarSign, FileText, Plus, X, Search, Filter, CheckCircle, AlertTriangle, Clock, Sparkles } = LucideIcons;
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -161,6 +150,21 @@ export default function AdminOrdersPage() {
     if (!createForm.buyerId || createForm.items.length === 0) {
       alert("Zaroori inputs (Buyer, items) complete karein.");
       return;
+    }
+
+    // Calculate total to check for E-Way Bill threshold of 50,000 INR
+    const subtotal = createForm.items.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const totalQty = createForm.items.reduce((sum, item) => sum + item.qty, 0);
+    let discountPercent = 0;
+    if (totalQty >= 50) discountPercent = 5;
+    else if (totalQty >= 25) discountPercent = 3;
+    const discountAmount = Math.round((subtotal * discountPercent) / 100);
+    const finalAmount = subtotal - discountAmount;
+    const gstAmount = Math.round(finalAmount * 0.05);
+    const invoiceAmount = finalAmount + gstAmount;
+
+    if (invoiceAmount > 50000) {
+      alert("Alert: E-Way Bill Mandatory!");
     }
 
     try {
@@ -400,6 +404,38 @@ export default function AdminOrdersPage() {
                             <FileText className="w-3.5 h-3.5" />
                           </button>
                           
+                          {(o.order_status === "confirmed" || o.order_status === "packed") && (
+                            <button
+                              onClick={async () => {
+                                const parts = prompt("Enter number of split invoices (2-10):", "2");
+                                if (!parts) return;
+                                const num = Number(parts);
+                                if (isNaN(num) || num < 2 || num > 10) {
+                                  alert("Please enter a valid number between 2 and 10.");
+                                  return;
+                                }
+                                if (confirm(`Are you sure you want to split this order into ${parts} invoices? This will maintain inventory/accounting and create parent-child mapping.`)) {
+                                  try {
+                                    const res = await fetch(`/api/orders/${o.order_id}/split`, {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ parts: num, staffName: "Amit Sharma" })
+                                    });
+                                    const data = await res.json();
+                                    if (!res.ok) throw new Error(data.error || "Failed to split order.");
+                                    alert(data.message || "Order split successfully.");
+                                    fetchData();
+                                  } catch (err: any) {
+                                    alert(err.message || "Split failed.");
+                                  }
+                                }
+                              }}
+                              className="py-1 px-2.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white font-extrabold transition-all text-[10px] uppercase tracking-wider active:scale-95"
+                            >
+                              Split
+                            </button>
+                          )}
+
                           {o.order_status === "confirmed" && (
                             <button
                               onClick={async () => {
@@ -879,9 +915,6 @@ export default function AdminOrdersPage() {
             </div>
           </form>
         </div>
-      )}
-    </div>
-  );</div>
       )}
     </div>
   );

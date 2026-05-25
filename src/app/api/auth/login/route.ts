@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     // 1. Check in Staff table first
     const staff = await db.staff.findUnique({
-      where: { mobile: cleanMobile }
+      where: mobile.includes('@') ? { email: mobile } : { mobile: cleanMobile }
     });
 
     if (staff) {

@@ -100,7 +100,7 @@ export const FAQ_DATABASE: FAQItem[] = [
     id: "returns",
     category: "QUALITY",
     question: "Return policy kya hai?",
-    answer: "Standard B2B regulations:\n🔴 Manufacturing defect: 100% replacement check or instant Credit Note adjustment within 48 hours of transit unpacking video proof.\n🔴 Damaged in transit: Transport claim backing.\n🔴 Change of mind (wholesale): Not allowed.",
+    answer: "Standard B2B regulations:\n🔴 Return & Defect Claim: 3-day strict claim limit from delivery date.\n🔴 Mandatory Requirement: Video recording of parcel opening is mandatory for any shortage or damage claims. No claims will be entertained without unedited, complete parcel opening raw video.\n🔴 Change of mind (wholesale): Not allowed.",
     keywords: ["return", "replace", "policy", "damage policy", "defect return", "refund"]
   },
   {

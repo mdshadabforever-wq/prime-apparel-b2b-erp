@@ -3,23 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  Users,
-  Package,
-  Layers,
-  CircleDollarSign,
-  MessageSquare,
-  Sparkles,
-  LogOut,
-  ChevronRight,
-  ShieldAlert,
-  ArrowLeft,
-  Menu,
-  X,
-  Keyboard
-} from "lucide-react";
+// Use a namespace import to avoid missing vendor chunk errors.
+import * as LucideIcons from "lucide-react";
+// Destructure needed icons for readability.
+const { LayoutDashboard, ShoppingCart, Users, Package, Layers, CircleDollarSign, MessageSquare, Sparkles, LogOut, ChevronRight, ShieldAlert, ArrowLeft, Menu, X, Keyboard } = LucideIcons;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

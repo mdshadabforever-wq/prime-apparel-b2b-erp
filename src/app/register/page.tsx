@@ -22,6 +22,41 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationResult, setRegistrationResult] = useState<any>(null);
+  const [gstVerifying, setGstVerifying] = useState(false);
+  const [gstSuccessMsg, setGstSuccessMsg] = useState("");
+
+  const handleGstVerify = async () => {
+    if (!formData.gstNumber || formData.gstNumber.trim().length !== 15) {
+      setError("Verify karne ke liye valid 15-character GSTIN type karein.");
+      return;
+    }
+    setError("");
+    setGstVerifying(true);
+    setGstSuccessMsg("");
+    try {
+      const res = await fetch("/api/gst/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gstNumber: formData.gstNumber })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "GST verify failed.");
+      
+      setFormData(prev => ({
+        ...prev,
+        businessName: data.legalName,
+        address: data.address,
+        gstLegalName: data.legalName,
+        gstAddress: data.address,
+        gstFilingStatus: data.filingStatus
+      }));
+      setGstSuccessMsg(`Verified Successfully! Company: ${data.legalName}, Filing Status: ${data.filingStatus}`);
+    } catch (err: any) {
+      setError(err.message || "GST validation failed. Format check karein.");
+    } finally {
+      setGstVerifying(false);
+    }
+  };
 
   // Stateful Form Fields
   const [formData, setFormData] = useState({
@@ -33,6 +68,11 @@ export default function RegisterPage() {
     businessName: "",
     businessType: "OFFLINE_RETAIL",
     gstNumber: "",
+    buyerType: "NON_GST", // "GST" or "NON_GST"
+    panOrAadhaar: "",
+    gstLegalName: "",
+    gstAddress: "",
+    gstFilingStatus: "",
     yearsInBusiness: "1-3",
     city: "",
     state: "Maharashtra",
@@ -91,6 +131,24 @@ export default function RegisterPage() {
       if (!formData.businessName || !formData.businessType) {
         setError("Shop Name aur Business Type zaroori hain.");
         return;
+      }
+      if (formData.buyerType === "GST") {
+        if (!formData.gstNumber || formData.gstNumber.trim().length !== 15) {
+          setError("Registered B2B Business ke liye 15-character valid GSTIN number mandatory hai.");
+          return;
+        }
+      } else {
+        if (!formData.panOrAadhaar || formData.panOrAadhaar.trim().length === 0) {
+          setError("Unregistered Retailer ke liye PAN card ya Aadhaar number mandatory hai.");
+          return;
+        }
+        const cleanVal = formData.panOrAadhaar.trim().toUpperCase();
+        const isPan = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanVal);
+        const isAadhaar = /^[0-9]{12}$/.test(cleanVal);
+        if (!isPan && !isAadhaar) {
+          setError("Kripya valid 10-digit PAN (e.g. ABCDE1234F) ya 12-digit Aadhaar enter karein.");
+          return;
+        }
       }
     }
     if (step === 3) {
@@ -249,14 +307,92 @@ export default function RegisterPage() {
                 </div>
               </div>
             )}
-
-            {/* STEP 2: BUSINESS DETAILS */}
+                         {/* STEP 2: BUSINESS DETAILS */}
             {step === 2 && (
               <div className="flex flex-col gap-5 text-left">
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-900">
                   <ShoppingBag className="w-4 h-4 text-gold" />
                   <h3 className="font-outfit font-bold text-white text-sm uppercase tracking-wider">Business & Shop Details</h3>
                 </div>
+
+                {/* Buyer Type Toggle */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-400 font-medium">Buyer Onboarding Type *</label>
+                  <div className="grid grid-cols-2 gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(p => ({ ...p, buyerType: "NON_GST", gstNumber: "", gstLegalName: "", gstAddress: "", gstFilingStatus: "" }))}
+                      className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all text-center leading-normal ${
+                        formData.buyerType === "NON_GST"
+                          ? "bg-white text-slate-950 border-white font-black"
+                          : "bg-slate-950 text-slate-400 border-slate-850 hover:text-white"
+                      }`}
+                    >
+                      Retailer / Non-GST (Aadhaar / PAN)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(p => ({ ...p, buyerType: "GST", panOrAadhaar: "" }))}
+                      className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all text-center leading-normal ${
+                        formData.buyerType === "GST"
+                          ? "bg-white text-slate-950 border-white font-black"
+                          : "bg-slate-950 text-slate-400 border-slate-850 hover:text-white"
+                      }`}
+                    >
+                      Registered B2B (GSTIN)
+                    </button>
+                  </div>
+                </div>
+
+                {formData.buyerType === "GST" ? (
+                  <div className="flex flex-col gap-4 bg-slate-950/40 p-4 rounded-xl border border-white/5 shadow-inner">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">GSTIN Number *</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          name="gstNumber"
+                          value={formData.gstNumber}
+                          onChange={(e) => setFormData(p => ({ ...p, gstNumber: e.target.value }))}
+                          placeholder="e.g. 27AAAAA1111A1Z1"
+                          className="flex-grow py-2 px-3.5 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white uppercase font-bold"
+                          maxLength={15}
+                        />
+                        <button
+                          type="button"
+                          disabled={gstVerifying}
+                          onClick={handleGstVerify}
+                          className="py-2 px-4 rounded-xl bg-gold hover:bg-gold-600 text-slate-950 font-black text-xs transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                        >
+                          {gstVerifying ? "Verifying..." : "Verify GSTIN"}
+                        </button>
+                      </div>
+                      <span className="text-[9px] text-slate-600 font-medium">Verify karne par company details automatic pre-fill ho jayengi.</span>
+                    </div>
+
+                    {gstSuccessMsg && (
+                      <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] flex flex-col gap-1.5 leading-relaxed font-semibold">
+                        <span className="text-emerald-300 font-black uppercase text-[9px] tracking-widest">✅ GST Verification Passed</span>
+                        <p><strong>Legal Name:</strong> {formData.gstLegalName}</p>
+                        <p><strong>Registered Address:</strong> {formData.gstAddress}</p>
+                        <p><strong>Filing Status:</strong> <span className="py-0.5 px-1.5 rounded bg-emerald-500 text-slate-950 font-black text-[9px] uppercase tracking-wider">{formData.gstFilingStatus}</span></p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5 bg-slate-950/40 p-4 rounded-xl border border-white/5 shadow-inner">
+                    <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">PAN or Aadhaar Number *</label>
+                    <input
+                      type="text"
+                      name="panOrAadhaar"
+                      value={formData.panOrAadhaar}
+                      onChange={(e) => setFormData(p => ({ ...p, panOrAadhaar: e.target.value }))}
+                      placeholder="e.g. 10-digit PAN or 12-digit Aadhaar"
+                      className="py-2 px-3.5 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white uppercase font-bold"
+                    />
+                    <span className="text-[9px] text-slate-600 font-medium">B2C Retail Invoice print karne ke liye PAN card ya Aadhaar number zaroori hai.</span>
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs text-slate-400 font-medium">Shop / Business Name *</label>
@@ -300,19 +436,6 @@ export default function RegisterPage() {
                       <option value="5+">More than 5 years</option>
                     </select>
                   </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-slate-400 font-medium">GST Number (Optional)</label>
-                  <input
-                    type="text"
-                    name="gstNumber"
-                    value={formData.gstNumber}
-                    onChange={handleInputChange}
-                    placeholder="27AAAAA1111A1Z1"
-                    className="py-2.5 px-4 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold focus:ring-1 focus:ring-gold outline-none text-xs transition-all text-white font-medium"
-                  />
-                  <span className="text-[10px] text-slate-600 leading-normal font-medium">💎 GST registered buyers qualify for instant credit verification logs.</span>
                 </div>
               </div>
             )}

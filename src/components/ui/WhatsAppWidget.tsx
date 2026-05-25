@@ -18,15 +18,15 @@ export default function WhatsAppWidget() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
+    <div className="fixed bottom-4 right-4 z-50 font-sans">
       {/* Floating Chat Bubble */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500 text-white shadow-2xl hover:bg-emerald-600 transition-all duration-300 transform hover:scale-110 active:scale-95 animate-bounce"
+          className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500 text-white shadow-2xl hover:bg-emerald-600 transition-all duration-300 transform hover:scale-110 active:scale-95 animate-bounce"
           aria-label="Chat with us on WhatsApp"
         >
-          <MessageCircle className="w-8 h-8 fill-current" />
+          <MessageCircle className="w-5 h-5 fill-current" />
           <span className="absolute -top-1 -right-1 flex h-4 w-4">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-[9px] text-white items-center justify-center font-bold">1</span>
@@ -70,7 +70,7 @@ export default function WhatsAppWidget() {
               href="https://wa.me/919999999999?text=Namaste!%20Prime%20Apparel%20Exports%20se%20wholesale%20catalog%20aur%20rates%20ki%20details%20bhejiye."
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-center flex items-center justify-center gap-2 transition-all"
+              className="py-1 px-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-center flex items-center justify-center gap-2 sm:py-0.5 sm:px-1 transition-all"
             >
               <MessageCircle className="w-5 h-5 fill-current" />
               WhatsApp Pe Catalog Maango

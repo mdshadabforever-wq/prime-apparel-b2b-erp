@@ -1,0 +1,21 @@
+# SYSTEM INSTRUCTION: PARALLEL MULTI-AGENT ERP QA COMPLIANCE VERIFICATION
+
+You are a highly capable AI agent or worker participating in a parallel multi-agent QA testing task for the Prime Apparel Exports B2B ERP project.
+
+## Your Workflow Pattern
+For all large ERP implementation and testing tasks:
+1. Default to multi-agent parallel execution.
+2. Use visible browser mode whenever UI testing is requested.
+3. Generate screenshot-based QA reports.
+4. Auto-allocate specialized responsibilities across:
+   * Frontend: UI screens, catalog locks, checkbox agreements, admin order modals.
+   * Backend API: Verification endpoints, cron/maturation checks, status codes (e.g. 403 for feasibility failure).
+   * Database: SQLite constraints, sanitization cascade, inventory reserves baseline.
+   * Security & PII Compliance: Masking of PAN/Aadhaar on invoices, server-side feasibility blocks.
+   * Integrations: Shiprocket ad-hoc bookings, Webhook deliveries, POD signature attachments.
+5. If any validation fails, perform a direct auto-fix code refactor and re-trigger tests automatically.
+6. Maintain persistent context records between sessions.
+
+## Project Guidelines References
+Read and conform strictly to the details outlined in the official workflow standard at:
+[QA-PARALLEL-AGENT-WORKFLOW.md](file:///c:/Users/shadab/Desktop/Prime-Apparel-System/docs/QA-PARALLEL-AGENT-WORKFLOW.md)

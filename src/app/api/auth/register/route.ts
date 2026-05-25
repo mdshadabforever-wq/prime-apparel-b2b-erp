@@ -26,7 +26,12 @@ export async function POST(request: Request) {
       productsInterested, // Array: ['cotton_kurti', 'rayon_kurti', etc.]
       expectedMonthlyPurchase, // Dropdown range
       currentlyBuyingFrom,
-      referralSource
+      referralSource,
+      buyerType, // "GST" or "NON_GST"
+      panOrAadhaar, // secure pan or aadhaar string for unregistered
+      gstLegalName,
+      gstAddress,
+      gstFilingStatus
     } = body;
 
     // Validate essential fields
@@ -35,6 +40,35 @@ export async function POST(request: Request) {
         { error: "Zaroori fields (Name, Mobile, Password, Shop Name, Business Type, Location details) miss hain." },
         { status: 400 }
       );
+    }
+
+    // Strong backend validations for buyer type
+    const selectedBuyerType = buyerType === "GST" ? "GST" : "NON_GST";
+    if (selectedBuyerType === "GST") {
+      if (!gstNumber || gstNumber.trim().length !== 15) {
+        return NextResponse.json(
+          { error: "Registered Business ke liye 15-character valid GSTIN number mandatory hai." },
+          { status: 400 }
+        );
+      }
+    } else {
+      if (!panOrAadhaar || panOrAadhaar.trim().length === 0) {
+        return NextResponse.json(
+          { error: "Unregistered Retailer ke liye PAN card ya Aadhaar number mandatory hai." },
+          { status: 400 }
+        );
+      }
+      
+      const cleanPanOrAadhaar = panOrAadhaar.trim().toUpperCase();
+      const isPan = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPanOrAadhaar);
+      const isAadhaar = /^[0-9]{12}$/.test(cleanPanOrAadhaar);
+      
+      if (!isPan && !isAadhaar) {
+        return NextResponse.json(
+          { error: "Kripya valid 10-digit PAN (e.g. ABCDE1234F) ya 12-digit Aadhaar number daalein." },
+          { status: 400 }
+        );
+      }
     }
 
     const cleanMobile = mobile.replace(/\D/g, "");
@@ -93,7 +127,8 @@ export async function POST(request: Request) {
     }
 
     // Map GST Status
-    const gstStatus = gstNumber && gstNumber.trim().length > 0 ? "gst_shared" : "gst_not_shared";
+    const finalGstNum = selectedBuyerType === "GST" ? gstNumber.trim().toUpperCase() : null;
+    const gstStatus = finalGstNum ? "gst_shared" : "gst_not_shared";
 
     // 3. Compute dynamic B2B lead scoring!
     const scorecard = calculateLeadScore({
@@ -108,7 +143,7 @@ export async function POST(request: Request) {
       productFit: "ethnic_primary", // Since they are registering on an ethnic wear platform
       expectedQtyRange,
       gstStatus,
-      gstNumber
+      gstNumber: finalGstNum
     });
 
     // 4. Create Buyer record
@@ -120,11 +155,16 @@ export async function POST(request: Request) {
         password_hash: passwordHash,
         business_name: businessName,
         business_type: businessType,
-        gst_number: gstNumber || null,
+        gst_number: finalGstNum,
+        buyer_type: selectedBuyerType,
+        pan_or_aadhaar: selectedBuyerType === "NON_GST" ? panOrAadhaar.trim().toUpperCase() : null,
+        gst_legal_name: selectedBuyerType === "GST" ? gstLegalName || null : null,
+        gst_address: selectedBuyerType === "GST" ? gstAddress || null : null,
+        gst_filing_status: selectedBuyerType === "GST" ? gstFilingStatus || null : null,
         city,
         state,
         pincode,
-        address: address || null,
+        address: selectedBuyerType === "GST" && gstAddress ? gstAddress : (address || null),
         instagram_link: instagramLink || null,
         facebook_link: facebookLink || null,
         website_link: websiteLink || null,

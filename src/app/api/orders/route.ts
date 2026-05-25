@@ -41,6 +41,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: check.reason }, { status: 403 });
     }
 
+    // Retrieve buyer for due date & B2B/B2C classification
+    const buyer = await db.buyer.findUnique({
+      where: { buyer_id: Number(buyerId) }
+    });
+    if (!buyer) {
+      return NextResponse.json({ error: "Buyer account system mein nahi mila." }, { status: 404 });
+    }
+
+    // Calculate due date (date + credit period)
+    const creditDays = buyer.credit_days || 0;
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + creditDays);
+
+    // Determine invoice type
+    const isB2B = buyer.buyer_type === "GST" && !!buyer.gst_number;
+    const invoiceType = isB2B ? "B2B" : "B2C";
+
     // 2. Generate unique order ID in format 20260524-XXX
     const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const count = await db.salesOrder.count({
@@ -70,7 +87,10 @@ export async function POST(request: Request) {
         payment_received_date: paymentTerms === "advance" ? new Date() : null,
         order_status: "confirmed",
         created_by: createdBy || "Staff Operator",
-        notes: notes || null
+        notes: notes || null,
+        invoice_type: invoiceType,
+        due_date: dueDate,
+        terms_accepted: true
       }
     });
 

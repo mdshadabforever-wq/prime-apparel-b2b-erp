@@ -5,6 +5,8 @@ import puppeteer from "puppeteer";
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const orderId = params.id;
+    const { searchParams } = new URL(request.url);
+    const forceHtml = searchParams.get("html") === "true";
     const order = await db.salesOrder.findUnique({
       where: { order_id: orderId },
       include: { buyer: true }
@@ -17,19 +19,34 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const items = JSON.parse(order.items || "[]");
     const buyer = order.buyer;
 
+    // Determine B2B status
+    const isB2B = order.invoice_type === "B2B" || (buyer.buyer_type === "GST" && !!buyer.gst_number);
+    const invoiceTitle = isB2B ? "B2B Tax Invoice" : "B2C Unregistered Invoice";
+
+    const maskPanOrAadhaar = (val?: string | null) => {
+      if (!val) return "Not Provided";
+      if (val.length <= 4) return val;
+      return "X".repeat(val.length - 4) + val.slice(-4);
+    };
+
     // Calculate taxes (Maharashtra is tier 1 state, Mumbai based B2B hub)
     const isMaharashtra = buyer.state.toLowerCase().includes("maharashtra");
     const cgst = isMaharashtra ? Number((order.gst_amount / 2).toFixed(2)) : 0;
     const sgst = isMaharashtra ? Number((order.gst_amount / 2).toFixed(2)) : 0;
     const igst = !isMaharashtra ? order.gst_amount : 0;
 
-    // Build the high-fidelity HTML representing the GST B2B Invoice
+    // Calculate dynamic due date
+    const calculatedDueDate = order.due_date 
+      ? new Date(order.due_date)
+      : new Date(new Date(order.order_date).getTime() + (buyer.credit_days || 0) * 24 * 60 * 60 * 1000);
+
+    // Build the high-fidelity HTML representing the GST Invoice
     const htmlContent = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
-        <title>Tax Invoice - ${orderId}</title>
+        <title>${invoiceTitle} - ${orderId}</title>
         <style>
           body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -70,7 +87,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
             margin-top: 2px;
           }
           .invoice-title {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 300;
             color: #9ca3af;
             text-align: right;
@@ -183,10 +200,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
                 </div>
               </td>
               <td>
-                <div class="invoice-title">Tax Invoice</div>
+                <div class="invoice-title">${invoiceTitle}</div>
                 <div style="text-align: right; margin-top: 15px; color: #4b5563;">
                   <strong>Invoice No:</strong> ${orderId}<br>
                   <strong>Date:</strong> ${new Date(order.order_date).toLocaleDateString()}<br>
+                  <strong>Due Date:</strong> ${calculatedDueDate.toLocaleDateString()}<br>
                   <strong>Payment Terms:</strong> ${order.payment_terms.toUpperCase()}<br>
                   <strong>Status:</strong> ${order.payment_status.toUpperCase()}<br>
                   <strong>Operator:</strong> ${order.created_by}
@@ -198,13 +216,16 @@ export async function GET(request: Request, { params }: { params: { id: string }
           <table class="details-grid">
             <tr>
               <td>
-                <div class="details-title">Billed To (B2B Buyer)</div>
+                <div class="details-title">Billed To (${isB2B ? "B2B Buyer" : "B2C Unregistered Buyer"})</div>
                 <div class="address-block">
                   <strong>${buyer.business_name}</strong><br>
                   Proprietor: ${buyer.full_name}<br>
                   📞 Contact: +${buyer.mobile}<br>
                   📍 Address: ${buyer.address || "Shop details verified"}, ${buyer.city}, ${buyer.state} - ${buyer.pincode}<br>
-                  <strong>Buyer GSTIN: ${buyer.gst_number || "NOT SHARED (B2C Wholesale)"}</strong>
+                  ${isB2B 
+                    ? `<strong>Buyer GSTIN: ${buyer.gst_number}</strong>`
+                    : `<strong>Verification details: PAN/Aadhaar (Masked): ${maskPanOrAadhaar(buyer.pan_or_aadhaar)}</strong>`
+                  }
                 </div>
               </td>
               <td>
@@ -296,12 +317,23 @@ export async function GET(request: Request, { params }: { params: { id: string }
             </table>
           </div>
 
-          <div style="font-size: 10px; color: #6b7280; margin-top: 20px; line-height: 1.5;">
-            <strong>Declaration & Terms:</strong><br>
-            1. All goods are meticulously double QC checked at our Mumbai operations hub before packing.<br>
-            2. Any transport damage claims must be registered within 48 hours of cargo receipt with visual proof.<br>
-            3. Interest @ 18% p.a. will be levied on credit invoices outstanding beyond configured days limit.<br>
-            4. This is a computer generated legal B2B tax invoice and does not require signatures.
+          ${order.pod_url ? `
+            <div style="margin-top: 25px; padding: 15px; border: 1px solid #10b981; background: #f0fdf4; border-radius: 6px; font-size: 11px; line-height: 1.6;">
+              <strong style="color: #0f766e; display: block; margin-bottom: 5px; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px;">Shiprocket Delivery Confirmation (POD)</strong>
+              Consignment delivered successfully. <br>
+              <strong>AWB Number:</strong> ${order.awb_number || "N/A"}<br>
+              <strong>Signed Delivery Proof (POD):</strong> <a href="${order.pod_url}" target="_blank" style="color: #0f766e; text-decoration: underline; font-weight: bold;">View Signed Delivery Slip</a>
+              ${order.pod_signature ? `<br><strong>Consignee Signature:</strong> <span style="font-family: 'Courier New', monospace; font-size: 12px; font-weight: bold; color: #374151; background: #fff; padding: 2px 6px; border: 1px solid #d1d5db; border-radius: 4px;">${order.pod_signature}</span>` : ""}
+            </div>
+          ` : ""}
+
+          <div style="font-size: 10px; color: #6b7280; margin-top: 30px; line-height: 1.6; border-top: 1px solid #eee; padding-top: 20px;">
+            <strong>TERMS & CONDITIONS:</strong><br>
+            1. All disputes are subject to Mumbai Jurisdiction only.<br>
+            2. Payment must be cleared within the mentioned due date from invoice date.<br>
+            3. This firm is registered under MSME (Udyam). Delayed payments beyond 45 days will attract compound interest at 3 times the RBI bank rate as per MSME Act.<br>
+            4. Video recording of parcel opening is mandatory for any shortage or damage claims within 3 days of delivery. No claims will be entertained without unedited opening video.<br>
+            5. This is a computer generated legal B2B/B2C invoice and does not require signatures.
           </div>
 
           <div class="footer-note">
@@ -322,6 +354,16 @@ export async function GET(request: Request, { params }: { params: { id: string }
       </html>
     `;
 
+    // Allow forcing HTML printable page for test runners or manual preview
+    if (forceHtml) {
+      return new Response(htmlContent, {
+        headers: {
+          "Content-Type": "text/html",
+          "Content-Disposition": `inline; filename="Invoice-${orderId}.html"`
+        }
+      });
+    }
+
     // Attempt standard server-side PDF generation using Puppeteer
     try {
       console.log(`Launching Puppeteer PDF generation for: ${orderId}`);
@@ -341,7 +383,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       
       await browser.close();
 
-      return new Response(pdfBuffer, {
+      return new Response(pdfBuffer as any, {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `inline; filename="Invoice-${orderId}.pdf"`,
