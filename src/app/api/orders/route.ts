@@ -26,7 +26,7 @@ export async function GET() {
 // POST: Create manual Sales Order (from admin workspace)
 export async function POST(request: Request) {
   try {
-    const { buyerId, items, paymentTerms, notes, createdBy } = await request.json();
+    const { buyerId, items, paymentTerms, notes, createdBy, depositAmount } = await request.json();
 
     if (!buyerId || !items || !Array.isArray(items) || items.length === 0 || !paymentTerms) {
       return NextResponse.json(
@@ -69,6 +69,14 @@ export async function POST(request: Request) {
     // 3. Reserve inventory stock counts
     await reserveInventory(items);
 
+    const initialPaid = paymentTerms === "advance"
+      ? check.invoiceAmount
+      : (depositAmount ? Math.min(Number(depositAmount), check.invoiceAmount) : 0);
+
+    const paymentStatus = initialPaid === check.invoiceAmount
+      ? "paid"
+      : (initialPaid > 0 ? "partial" : "pending");
+
     // 4. Create the Sales Order
     const newOrder = await db.salesOrder.create({
       data: {
@@ -77,14 +85,14 @@ export async function POST(request: Request) {
         items: JSON.stringify(items),
         total_qty: items.reduce((s, i) => s + i.qty, 0),
         subtotal_amount: check.subtotal,
-        discount_amount: check.subtotal - check.finalAmount,
-        final_amount: check.finalAmount,
+        discount_amount: check.volumeDiscount + check.prepaidDiscount,
+        final_amount: check.taxableAmount,
         gst_amount: check.gstAmount,
         invoice_amount: check.invoiceAmount,
         payment_terms: paymentTerms,
-        payment_status: paymentTerms === "advance" ? "paid" : "pending", // if advance payment, assume paid on creation (or pending verification)
-        payment_received_amount: paymentTerms === "advance" ? check.invoiceAmount : 0,
-        payment_received_date: paymentTerms === "advance" ? new Date() : null,
+        payment_status: paymentStatus,
+        payment_received_amount: initialPaid,
+        payment_received_date: initialPaid > 0 ? new Date() : null,
         order_status: "confirmed",
         created_by: createdBy || "Staff Operator",
         notes: notes || null,
@@ -94,14 +102,16 @@ export async function POST(request: Request) {
       }
     });
 
-    // 5. If pre-paid, record direct CashFlow income transaction
-    if (paymentTerms === "advance") {
+    // 5. If paid (fully or partially), record direct CashFlow income transaction
+    if (initialPaid > 0) {
       await db.cashFlow.create({
         data: {
           type: "income",
           category: "order_payment",
-          description: `Advance payment for sales order ${orderId}`,
-          amount: check.invoiceAmount,
+          description: initialPaid === check.invoiceAmount
+            ? `Full advance payment for sales order ${orderId}`
+            : `Partial advance deposit of ₹${initialPaid} for sales order ${orderId}`,
+          amount: initialPaid,
           sales_order_id: orderId,
           created_by: createdBy || "Staff Operator"
         }

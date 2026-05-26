@@ -10,7 +10,19 @@ export async function checkOrderFeasibility(
   buyerId: number,
   items: OrderItemInput[],
   paymentTerms: string
-): Promise<{ allowed: boolean; reason?: string; subtotal: number; finalAmount: number; gstAmount: number; invoiceAmount: number }> {
+): Promise<{
+  allowed: boolean;
+  reason?: string;
+  subtotal: number;
+  volumeDiscount: number;
+  prepaidDiscount: number;
+  codCharges: number;
+  courierCharges: number;
+  packagingCharges: number;
+  taxableAmount: number;
+  gstAmount: number;
+  invoiceAmount: number;
+}> {
   let subtotal = 0;
 
   // 1. Stock availability validation
@@ -20,7 +32,11 @@ export async function checkOrderFeasibility(
     });
 
     if (!product) {
-      return { allowed: false, reason: `SKU ${item.skuId} master list mein nahi mila.`, subtotal: 0, finalAmount: 0, gstAmount: 0, invoiceAmount: 0 };
+      return {
+        allowed: false,
+        reason: `SKU ${item.skuId} master list mein nahi mila.`,
+        subtotal: 0, volumeDiscount: 0, prepaidDiscount: 0, codCharges: 0, courierCharges: 0, packagingCharges: 0, taxableAmount: 0, gstAmount: 0, invoiceAmount: 0
+      };
     }
 
     const availableQty = product.qty_available - product.qty_reserved;
@@ -28,7 +44,7 @@ export async function checkOrderFeasibility(
       return {
         allowed: false,
         reason: `SKU '${product.design_name}' [${item.skuId}] ki stock available nahi hai. Maanga: ${item.qty}, Bacha: ${availableQty} pieces.`,
-        subtotal: 0, finalAmount: 0, gstAmount: 0, invoiceAmount: 0
+        subtotal: 0, volumeDiscount: 0, prepaidDiscount: 0, codCharges: 0, courierCharges: 0, packagingCharges: 0, taxableAmount: 0, gstAmount: 0, invoiceAmount: 0
       };
     }
 
@@ -42,10 +58,25 @@ export async function checkOrderFeasibility(
   if (totalQty >= 50) discountPercent = 5;      // 50+ pcs: 5% discount
   else if (totalQty >= 25) discountPercent = 3; // 25-49 pcs: 3% discount
 
-  const discountAmount = Math.round((subtotal * discountPercent) / 100);
-  const finalAmount = subtotal - discountAmount;
-  const gstAmount = Math.round(finalAmount * 0.05); // 5% B2B ethnic apparel GST
-  const invoiceAmount = finalAmount + gstAmount;
+  const volumeDiscount = Math.round((subtotal * discountPercent) / 100);
+  
+  // 2% prepaid payment discount (if advance or partial deposit terms)
+  const isPrepaid = paymentTerms === "advance" || paymentTerms === "partial";
+  const prepaidDiscount = isPrepaid ? Math.round(subtotal * 0.02) : 0;
+  
+  // 2% COD collection charges (if COD terms)
+  const isCod = paymentTerms === "cod";
+  const codCharges = isCod ? Math.round(subtotal * 0.02) : 0;
+  
+  // Courier / freight charges (₹20 per piece)
+  const courierCharges = totalQty * 20;
+  
+  // Packaging & handling (flat ₹150 for double QC sacks)
+  const packagingCharges = 150;
+
+  const taxableAmount = subtotal - volumeDiscount - prepaidDiscount + codCharges + courierCharges + packagingCharges;
+  const gstAmount = Math.round(taxableAmount * 0.05); // 5% B2B ethnic apparel GST
+  const invoiceAmount = taxableAmount + gstAmount;
 
   // 3. Buyer status and Credit limit validation
   const buyer = await db.buyer.findUnique({
@@ -53,7 +84,11 @@ export async function checkOrderFeasibility(
   });
 
   if (!buyer) {
-    return { allowed: false, reason: "Buyer account system mein nahi mila.", subtotal: 0, finalAmount: 0, gstAmount: 0, invoiceAmount: 0 };
+    return {
+      allowed: false,
+      reason: "Buyer account system mein nahi mila.",
+      subtotal: 0, volumeDiscount: 0, prepaidDiscount: 0, codCharges: 0, courierCharges: 0, packagingCharges: 0, taxableAmount: 0, gstAmount: 0, invoiceAmount: 0
+    };
   }
 
   // Block checkouts if account is locked or blocked due to overdue invoices
@@ -61,7 +96,7 @@ export async function checkOrderFeasibility(
     return {
       allowed: false,
       reason: "Checkout Blocked: Please clear your previous outstanding dues to generate a new invoice.",
-      subtotal: 0, finalAmount: 0, gstAmount: 0, invoiceAmount: 0
+      subtotal: 0, volumeDiscount: 0, prepaidDiscount: 0, codCharges: 0, courierCharges: 0, packagingCharges: 0, taxableAmount: 0, gstAmount: 0, invoiceAmount: 0
     };
   }
 
@@ -71,7 +106,7 @@ export async function checkOrderFeasibility(
       return {
         allowed: false,
         reason: `Pehle 2 orders strict advance basis pe standard rules hain. Aapke confirmed orders: ${buyer.total_orders_count}. Payment 'advance' select karein!`,
-        subtotal: 0, finalAmount: 0, gstAmount: 0, invoiceAmount: 0
+        subtotal: 0, volumeDiscount: 0, prepaidDiscount: 0, codCharges: 0, courierCharges: 0, packagingCharges: 0, taxableAmount: 0, gstAmount: 0, invoiceAmount: 0
       };
     }
 
@@ -97,7 +132,7 @@ export async function checkOrderFeasibility(
       return {
         allowed: false,
         reason: `Credit Limit exceeded! Current Invoice (₹${invoiceAmount}) + Outstanding Dues (₹${outstandingDebt}) equals ₹${invoiceAmount + outstandingDebt}, which exceeds your safe credit limit (₹${buyer.credit_limit}). Please select 'advance' payment or clear outstanding balances.`,
-        subtotal: 0, finalAmount: 0, gstAmount: 0, invoiceAmount: 0
+        subtotal: 0, volumeDiscount: 0, prepaidDiscount: 0, codCharges: 0, courierCharges: 0, packagingCharges: 0, taxableAmount: 0, gstAmount: 0, invoiceAmount: 0
       };
     }
   }
@@ -105,7 +140,12 @@ export async function checkOrderFeasibility(
   return {
     allowed: true,
     subtotal,
-    finalAmount,
+    volumeDiscount,
+    prepaidDiscount,
+    codCharges,
+    courierCharges,
+    packagingCharges,
+    taxableAmount,
     gstAmount,
     invoiceAmount
   };

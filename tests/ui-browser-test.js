@@ -26,7 +26,7 @@ async function runBrowserQA() {
   console.log(`Targeting local server at: ${BASE_URL}\n`);
   
   const browser = await puppeteer.launch({
-    headless: "new",
+    headless: false,
     defaultViewport: { width: 1280, height: 800 },
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });

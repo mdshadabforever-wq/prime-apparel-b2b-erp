@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { Tooltip } from "@/components/ui/Tooltip";
 import {
   TrendingUp,
   DollarSign,
@@ -75,27 +76,38 @@ export default async function AdminAnalyticsPage() {
 
       {/* 1. TOP KPI METRICS BAR */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {kpis.map((kpi, idx) => (
-          <div
-            key={idx}
-            className="glass-panel p-5 rounded-2xl flex flex-col justify-between hover:border-gold/30 transition-all"
-          >
-            <div className="flex justify-between items-start">
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider leading-none">
-                {kpi.title}
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center border border-slate-800">
-                {kpi.icon}
+        {kpis.map((kpi, idx) => {
+          const getKpiTooltip = (title: string) => {
+            if (title.includes("Gross Sourced")) return "Total valuation of current warehouse stock calculated at Surat landed sourcing cost.";
+            if (title.includes("Average Net Profit")) return "Average profit margin percentage on wholesale price across all catalog SKUs.";
+            if (title.includes("Active Receivables")) return "Outstanding balance payments yet to be collected from active buyer ledger accounts.";
+            if (title.includes("Average B2B Order")) return "Consolidated average average billing amount per single wholesale purchase order.";
+            return "";
+          };
+
+          return (
+            <Tooltip key={idx} content={getKpiTooltip(kpi.title)} position="top" className="w-full">
+              <div
+                className="glass-panel p-5 rounded-2xl flex flex-col justify-between hover:border-gold/30 transition-all h-full"
+              >
+                <div className="flex justify-between items-start">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider leading-none">
+                    {kpi.title}
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center border border-slate-800">
+                    {kpi.icon}
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="text-xl md:text-2xl font-black text-white tracking-tight leading-none">
+                    {kpi.val}
+                  </span>
+                  <p className="text-[10px] text-slate-500 mt-1 leading-normal">{kpi.desc}</p>
+                </div>
               </div>
-            </div>
-            <div className="mt-4">
-              <span className="text-xl md:text-2xl font-black text-white tracking-tight leading-none">
-                {kpi.val}
-              </span>
-              <p className="text-[10px] text-slate-500 mt-1 leading-normal">{kpi.desc}</p>
-            </div>
-          </div>
-        ))}
+            </Tooltip>
+          );
+        })}
       </div>
 
       {/* 2. CHARTS & LEDGERS SECTION */}
@@ -108,21 +120,27 @@ export default async function AdminAnalyticsPage() {
           </div>
 
           <div className="grid grid-cols-3 gap-4 text-center mt-2">
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col">
-              <span className="text-[9px] uppercase font-bold text-emerald-400">Current (0-7 Days)</span>
-              <span className="text-lg font-black text-white mt-1.5">₹{current7.toLocaleString()}</span>
-              <span className="text-[9px] text-slate-500 mt-1">Normal collection cycle</span>
-            </div>
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col">
-              <span className="text-[9px] uppercase font-bold text-amber-500">Matured (8-30 Days)</span>
-              <span className="text-lg font-black text-white mt-1.5">₹{pending15.toLocaleString()}</span>
-              <span className="text-[9px] text-slate-500 mt-1">Outstanding credit terms</span>
-            </div>
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col border-l-2 border-l-red-500">
-              <span className="text-[9px] uppercase font-bold text-red-400">Overdue (30+ Days)</span>
-              <span className="text-lg font-black text-red-500 mt-1.5 animate-pulse">₹{overdue30.toLocaleString()}</span>
-              <span className="text-[9px] text-red-400 mt-1 font-bold">Escalate immediately</span>
-            </div>
+            <Tooltip content="Dues within standard grace period. Standard UPI/bank transfer collections." position="top" className="w-full">
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col h-full">
+                <span className="text-[9px] uppercase font-bold text-emerald-400">Current (0-7 Days)</span>
+                <span className="text-lg font-black text-white mt-1.5">₹{current7.toLocaleString()}</span>
+                <span className="text-[9px] text-slate-500 mt-1">Normal collection cycle</span>
+              </div>
+            </Tooltip>
+            <Tooltip content="Outstanding receivables matching extended B2B credit agreement days." position="top" className="w-full">
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col h-full">
+                <span className="text-[9px] uppercase font-bold text-amber-500">Matured (8-30 Days)</span>
+                <span className="text-lg font-black text-white mt-1.5">₹{pending15.toLocaleString()}</span>
+                <span className="text-[9px] text-slate-500 mt-1">Outstanding credit terms</span>
+              </div>
+            </Tooltip>
+            <Tooltip content="High-risk receivables matured past credit limits. Escalate collection immediately!" position="top" className="w-full">
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col border-l-2 border-l-red-500 h-full">
+                <span className="text-[9px] uppercase font-bold text-red-400">Overdue (30+ Days)</span>
+                <span className="text-lg font-black text-red-500 mt-1.5 animate-pulse">₹{overdue30.toLocaleString()}</span>
+                <span className="text-[9px] text-red-400 mt-1 font-bold">Escalate immediately</span>
+              </div>
+            </Tooltip>
           </div>
 
           {/* SVG Aging visual representation */}

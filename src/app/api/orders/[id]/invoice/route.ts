@@ -31,9 +31,39 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     // Calculate taxes (Maharashtra is tier 1 state, Mumbai based B2B hub)
     const isMaharashtra = buyer.state.toLowerCase().includes("maharashtra");
+    const totalQty = order.total_qty;
+    const subtotal = order.subtotal_amount;
+    
+    // Deterministic settlement breakdown
+    const isPrepaid = order.payment_terms === "advance" || order.payment_terms === "partial";
+    const isCod = order.payment_terms === "cod";
+
+    // 2% prepaid discount
+    const prepaidDiscount = isPrepaid ? Math.round(subtotal * 0.02) : 0;
+    // 2% COD collection charges
+    const codCharges = isCod ? Math.round(subtotal * 0.02) : 0;
+
+    // Courier / Freight Charges: ₹20 per piece (standard B2B wholesale logistics)
+    const courierCharges = totalQty * 20;
+    // Packaging & double QC sacks handling: flat ₹150
+    const packagingCharges = 150;
+
+    // Volume scheme B2B bulk discounts
+    let volumeDiscountPercent = 0;
+    if (totalQty >= 50) volumeDiscountPercent = 5;
+    else if (totalQty >= 25) volumeDiscountPercent = 3;
+    const volumeDiscount = Math.round((subtotal * volumeDiscountPercent) / 100);
+
+    // Calculate dynamic Taxable value and GST splits penny-perfectly
+    const taxableAmount = subtotal - volumeDiscount - prepaidDiscount + codCharges + courierCharges + packagingCharges;
+    
+    // CGST, SGST, IGST calculations
     const cgst = isMaharashtra ? Number((order.gst_amount / 2).toFixed(2)) : 0;
     const sgst = isMaharashtra ? Number((order.gst_amount / 2).toFixed(2)) : 0;
     const igst = !isMaharashtra ? order.gst_amount : 0;
+
+    // Amount saved due to prepaid
+    const amountSaved = isPrepaid ? (prepaidDiscount + Math.round(subtotal * 0.02)) : 0;
 
     // Calculate dynamic due date
     const calculatedDueDate = order.due_date 
@@ -140,21 +170,98 @@ export async function GET(request: Request, { params }: { params: { id: string }
             background: #fcfcfc;
           }
           .summary-table {
-            width: 40%;
+            width: 48%;
             margin-left: auto;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+            font-size: 11.5px;
           }
           .summary-table td {
-            padding: 6px 10px;
+            padding: 7px 10px;
             border-bottom: 1px solid #f3f4f6;
           }
           .summary-table tr.total td {
             font-weight: 800;
             color: #1e3a8a;
-            border-top: 2px solid #1e3a8a;
+            border-top: 2.5px double #1e3a8a;
             font-size: 15px;
             background: #f0f4ff;
+          }
+          .flow-container {
+            margin-top: 10px;
+            margin-bottom: 30px;
+            background: #fafafa;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: inherit;
+          }
+          .flow-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+          }
+          .flow-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+          }
+          .flow-card {
+            flex: 1;
+            min-width: 100px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            position: relative;
+          }
+          .flow-card.accent {
+            background: #f0f4ff;
+            border-color: #bfdbfe;
+          }
+          .flow-card.saving {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+          }
+          .flow-card.danger {
+            background: #fef2f2;
+            border-color: #fca5a5;
+          }
+          .flow-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+          }
+          .flow-value {
+            font-size: 13px;
+            font-weight: 800;
+            color: #111827;
+          }
+          .flow-card.accent .flow-value {
+            color: #1e3a8a;
+          }
+          .flow-card.saving .flow-value {
+            color: #047857;
+          }
+          .flow-card.danger .flow-value {
+            color: #b91c1c;
+          }
+          .flow-arrow {
+            color: #9ca3af;
+            font-weight: bold;
+            font-size: 16px;
           }
           .bank-details {
             border: 1px dashed #d1d5db;
@@ -162,7 +269,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
             padding: 15px;
             border-radius: 6px;
             margin-bottom: 30px;
-            width: 55%;
+            width: 48%;
             font-size: 11px;
           }
           .footer-note {
@@ -282,39 +389,156 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
             <table class="summary-table">
               <tr>
-                <td style="color: #6b7280;">Gross Subtotal</td>
-                <td style="text-align: right; font-weight: bold;">₹${order.subtotal_amount.toLocaleString()}</td>
+                <td style="color: #6b7280;">Product Subtotal (${totalQty} pcs)</td>
+                <td style="text-align: right; font-weight: bold;">₹${subtotal.toLocaleString()}</td>
               </tr>
-              ${order.discount_amount > 0 ? `
-                <tr>
-                  <td style="color: #10b981;">Volume Scheme Disc</td>
-                  <td style="text-align: right; font-weight: bold; color: #10b981;">- ₹${order.discount_amount.toLocaleString()}</td>
+              ${volumeDiscount > 0 ? `
+                <tr style="color: #047857;">
+                  <td style="color: #047857;">Volume Scheme Discount (${volumeDiscountPercent}%)</td>
+                  <td style="text-align: right; font-weight: bold; color: #047857;">- ₹${volumeDiscount.toLocaleString()}</td>
+                </tr>
+              ` : ""}
+              ${prepaidDiscount > 0 ? `
+                <tr style="color: #047857; background: #f0fdf4;">
+                  <td style="color: #047857; font-weight: bold;">Prepaid Payment Discount (2%)</td>
+                  <td style="text-align: right; font-weight: bold; color: #047857;">- ₹${prepaidDiscount.toLocaleString()}</td>
+                </tr>
+              ` : ""}
+              ${codCharges > 0 ? `
+                <tr style="color: #b45309; background: #fffbeb;">
+                  <td style="color: #b45309;">COD Collection Charges (2%)</td>
+                  <td style="text-align: right; font-weight: bold; color: #b45309;">+ ₹${codCharges.toLocaleString()}</td>
                 </tr>
               ` : ""}
               <tr>
-                <td style="color: #6b7280;">Taxable Value</td>
-                <td style="text-align: right; font-weight: bold;">₹${order.final_amount.toLocaleString()}</td>
+                <td style="color: #6b7280;">Courier / Freight Charges</td>
+                <td style="text-align: right; font-weight: bold;">+ ₹${courierCharges.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td style="color: #6b7280;">Packaging & QC Sack Wrapping</td>
+                <td style="text-align: right; font-weight: bold;">+ ₹${packagingCharges.toLocaleString()}</td>
+              </tr>
+              <tr style="border-top: 1.5px solid #d1d5db; font-weight: bold;">
+                <td style="color: #374151;">Taxable Value</td>
+                <td style="text-align: right; color: #111827;">₹${taxableAmount.toLocaleString()}</td>
               </tr>
               ${cgst > 0 ? `
-                <tr>
-                  <td style="color: #6b7280; font-size: 11px;">CGST (2.5%)</td>
-                  <td style="text-align: right; font-size: 11px;">₹${cgst.toLocaleString()}</td>
+                <tr style="color: #6b7280; font-size: 11px;">
+                  <td>CGST (2.5%)</td>
+                  <td style="text-align: right;">₹${cgst.toLocaleString()}</td>
                 </tr>
-                <tr>
-                  <td style="color: #6b7280; font-size: 11px;">SGST (2.5%)</td>
-                  <td style="text-align: right; font-size: 11px;">₹${sgst.toLocaleString()}</td>
+                <tr style="color: #6b7280; font-size: 11px;">
+                  <td>SGST (2.5%)</td>
+                  <td style="text-align: right;">₹${sgst.toLocaleString()}</td>
                 </tr>
               ` : `
-                <tr>
-                  <td style="color: #6b7280; font-size: 11px;">IGST (5.0%)</td>
-                  <td style="text-align: right; font-size: 11px;">₹${igst.toLocaleString()}</td>
+                <tr style="color: #6b7280; font-size: 11px;">
+                  <td>IGST (5.0%)</td>
+                  <td style="text-align: right;">₹${igst.toLocaleString()}</td>
                 </tr>
               `}
               <tr class="total">
-                <td>Total Due</td>
+                <td>Final Payable Amount</td>
                 <td style="text-align: right;">₹${order.invoice_amount.toLocaleString()}</td>
               </tr>
+              ${order.payment_received_amount > 0 ? `
+                <tr style="color: #047857; font-weight: bold; background: #ecfdf5;">
+                  <td style="color: #047857; padding: 7px 10px;">Payment Received / Advance</td>
+                  <td style="text-align: right; color: #047857; padding: 7px 10px;">- ₹${order.payment_received_amount.toLocaleString()}</td>
+                </tr>
+              ` : ""}
+              ${(order.invoice_amount - order.payment_received_amount) > 0 ? `
+                <tr style="color: #b91c1c; font-weight: 800; background: #fef2f2; font-size: 14px; border-top: 2px solid #ef4444;">
+                  <td style="color: #b91c1c; padding: 8px 10px;">Net Pending Balance Due</td>
+                  <td style="text-align: right; color: #b91c1c; padding: 8px 10px;">₹${(order.invoice_amount - order.payment_received_amount).toLocaleString()}</td>
+                </tr>
+              ` : `
+                <tr style="color: #047857; font-weight: 800; background: #ecfdf5; font-size: 14px; border-top: 2px solid #10b981;">
+                  <td style="color: #047857; padding: 8px 10px;">Invoice Status</td>
+                  <td style="text-align: right; color: #047857; padding: 8px 10px;">FULLY SETTLED</td>
+                </tr>
+              `}
             </table>
+          </div>
+
+          <!-- Visual B2B Settlement Flowchart -->
+          <div class="flow-container">
+            <div class="flow-title">
+              📊 Commercial Billing Flow Breakdown (Indian B2B Wholesale Rules)
+            </div>
+            <div class="flow-steps">
+              <div class="flow-card accent">
+                <div class="flow-label">1. Gross Products</div>
+                <div class="flow-value">₹${subtotal.toLocaleString()}</div>
+                <div style="font-size: 8px; color: #6b7280; margin-top: 2px;">${totalQty} Pcs Count</div>
+              </div>
+              
+              <div class="flow-arrow">➔</div>
+
+              <div class="flow-card ${volumeDiscount > 0 ? 'saving' : ''}">
+                <div class="flow-label">2. Bulk Discount</div>
+                <div class="flow-value">${volumeDiscount > 0 ? `-₹${volumeDiscount.toLocaleString()}` : '₹0'}</div>
+                <div style="font-size: 8px; color: #6b7280; margin-top: 2px;">Scheme: ${volumeDiscountPercent}%</div>
+              </div>
+
+              <div class="flow-arrow">➔</div>
+
+              ${isPrepaid ? `
+                <div class="flow-card saving">
+                  <div class="flow-label">3. Prepaid Bonus</div>
+                  <div class="flow-value">-₹${prepaidDiscount.toLocaleString()}</div>
+                  <div style="font-size: 8px; color: #047857; font-weight: bold; margin-top: 2px;">2% Cash Saved!</div>
+                </div>
+              ` : `
+                <div class="flow-card ${codCharges > 0 ? 'danger' : ''}">
+                  <div class="flow-label">3. COD Fee</div>
+                  <div class="flow-value">${codCharges > 0 ? `+₹${codCharges.toLocaleString()}` : '₹0'}</div>
+                  <div style="font-size: 8px; color: #b91c1c; font-weight: bold; margin-top: 2px;">COD Charge (2%)</div>
+                </div>
+              `}
+
+              <div class="flow-arrow">➔</div>
+
+              <div class="flow-card">
+                <div class="flow-label">4. Freight & Sack</div>
+                <div class="flow-value">+₹${(courierCharges + packagingCharges).toLocaleString()}</div>
+                <div style="font-size: 8px; color: #6b7280; margin-top: 2px;">Double Sacks QC</div>
+              </div>
+
+              <div class="flow-arrow">➔</div>
+
+              <div class="flow-card accent">
+                <div class="flow-label">5. Taxable Base</div>
+                <div class="flow-value">₹${taxableAmount.toLocaleString()}</div>
+                <div style="font-size: 8px; color: #6b7280; margin-top: 2px;">For GST split</div>
+              </div>
+
+              <div class="flow-arrow">➔</div>
+
+              <div class="flow-card">
+                <div class="flow-label">6. GST splits (5%)</div>
+                <div class="flow-value">+₹${order.gst_amount.toLocaleString()}</div>
+                <div style="font-size: 8px; color: #6b7280; margin-top: 2px;">${isMaharashtra ? 'CGST+SGST' : 'IGST'}</div>
+              </div>
+
+              <div class="flow-arrow">➔</div>
+
+              <div class="flow-card accent" style="background: #e0e7ff; border-color: #818cf8;">
+                <div class="flow-label" style="color: #3730a3;">7. Net Invoice</div>
+                <div class="flow-value" style="color: #3730a3; font-size: 14px;">₹${order.invoice_amount.toLocaleString()}</div>
+                <div style="font-size: 8px; color: #4338ca; font-weight: bold; margin-top: 2px;">Total Due</div>
+              </div>
+            </div>
+            
+            ${isPrepaid ? `
+              <div style="margin-top: 15px; text-align: center; font-size: 11.5px; font-weight: bold; color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 8px; border-radius: 6px;">
+                🎉 Prepaid Bonus Saved: You saved ₹${amountSaved.toLocaleString()} on this wholesale consignment by settling payments in advance!
+              </div>
+            ` : `
+              <div style="margin-top: 15px; text-align: center; font-size: 11.5px; font-weight: bold; color: #4b5563; background: #f3f4f6; border: 1px solid #e5e7eb; padding: 8px; border-radius: 6px;">
+                💡 Pro-Tip: Settle this order as **Prepaid** next time to automatically save ₹${Math.round(subtotal * 0.04).toLocaleString()} in extra COD collection fees and prepaid discounts!
+              </div>
+            `}
           </div>
 
           ${order.pod_url ? `

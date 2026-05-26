@@ -1,0 +1,234 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Buyer {
+  buyer_id           Int           @id @default(autoincrement())
+  full_name          String
+  mobile             String        @unique // WhatsApp number — primary identifier
+  email              String?
+  password_hash      String
+  business_name      String
+  business_type      String        @default("OTHER") // OFFLINE_RETAIL, ONLINE_SELLER, BOUTIQUE, MINI_WHOLESALER, OTHER
+  gst_number         String?
+  buyer_type         String        @default("NON_GST") // GST, NON_GST
+  pan_or_aadhaar     String?
+  gst_legal_name     String?
+  gst_address        String?
+  gst_filing_status  String?
+  city               String
+  state              String
+  pincode            String
+  address            String?
+  instagram_link     String?
+  facebook_link      String?
+  website_link       String?
+  score              Int           @default(0) // 0-100 auto-calculated
+  lead_status        String        @default("COLD") // HOT, WARM, COLD
+  account_status     String        @default("PENDING") // PENDING, APPROVED, REJECTED, BLOCKED
+  credit_limit       Float         @default(0)
+  credit_days        Int           @default(0)
+  total_orders_count Int           @default(0)
+  total_orders_value Float         @default(0)
+  last_order_date    DateTime?
+  last_contact_date  DateTime?     @default(now())
+  next_followup_date DateTime?
+  notes              String?
+  registered_on      DateTime      @default(now())
+  approved_on        DateTime?
+  referred_by        String?
+  sales_orders       SalesOrder[]
+  whatsapp_logs      WhatsAppLog[]
+}
+
+model Product {
+  sku_id             String        @id // e.g. PA-25-KR-001
+  design_name        String
+  category           String        // kurti, suit, festive, daily
+  fabric             String        // cotton, rayon, georgette, crepe
+  color_options      String        // comma-separated colors
+  size_set           String        // S, M, L, XL or free size
+  length_cm          Int?
+  purchase_cost      Float         // cost per piece from supplier
+  freight_per_piece  Float         @default(0)
+  overhead_per_piece Float         @default(0)
+  landed_cost        Float         // purchase_cost + freight + overhead
+  standard_price     Float         // standard B2B price (12-24 pcs)
+  scheme_price       Float         // bulk B2B price (25-49 pcs)
+  repeat_price       Float         // best B2B price (50+ pcs)
+  margin_percent     Float         // (standard_price - landed_cost) / standard_price * 100
+  qty_available      Int           @default(0)
+  qty_reserved       Int           @default(0) // confirmed sales orders not yet dispatched
+  qty_sold_total     Int           @default(0)
+  grade              String        @default("A") // A, B, C
+  status             String        @default("available") // available, low_stock, out_of_stock, discontinued
+  supplier_id        Int?
+  supplier           Supplier?     @relation(fields: [supplier_id], references: [supplier_id])
+  created_date       DateTime      @default(now())
+  last_updated       DateTime      @updatedAt
+  photo_urls         String        // JSON string of images array
+  video_url          String?
+  notes              String?
+}
+
+model Supplier {
+  supplier_id           Int             @id @default(autoincrement())
+  supplier_name         String
+  city                  String          @default("Surat")
+  contact_person        String
+  mobile                String
+  whatsapp_number       String
+  email                 String?
+  speciality            String?         // cotton_kurti, rayon, festive etc
+  rating                Int             @default(5)
+  written_terms_done    String          @default("no") // yes, no
+  delivery_days_average Int             @default(7)
+  return_policy_notes   String?
+  payment_terms         String?
+  total_orders_count    Int             @default(0)
+  total_orders_value    Float           @default(0)
+  last_order_date       DateTime?
+  notes                 String?
+  status                String          @default("active") // active, inactive
+  products              Product[]
+  purchase_orders       PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  purchase_order_id      Int           @id @default(autoincrement())
+  supplier_id            Int
+  supplier               Supplier      @relation(fields: [supplier_id], references: [supplier_id])
+  order_date             DateTime      @default(now())
+  expected_delivery_date DateTime?
+  actual_delivery_date   DateTime?
+  items                  String        // JSON string of [{sku_id, qty, rate}]
+  total_quantity         Int
+  total_purchase_value   Float
+  freight_cost           Float         @default(0)
+  total_landed_cost      Float
+  payment_status         String        @default("pending") // pending, paid, partial
+  payment_date           DateTime?
+  grn_done               String        @default("no") // yes, no
+  qc_done                String        @default("no") // yes, no
+  notes                  String?
+  cash_flow_entries      CashFlow[]
+}
+
+model SalesOrder {
+  order_id                 String        @id // Date+serial e.g. 20250601-001
+  buyer_id                 Int
+  buyer                    Buyer         @relation(fields: [buyer_id], references: [buyer_id])
+  order_date               DateTime      @default(now())
+  items                    String        // JSON string of [{sku_id, qty, price, subtotal}]
+  total_qty                Int
+  subtotal_amount          Float
+  discount_amount          Float         @default(0)
+  final_amount             Float
+  gst_amount               Float
+  invoice_amount           Float
+  payment_terms            String        // advance, 7days, 15days, 30days
+  payment_status           String        @default("pending") // paid, partial, pending, overdue
+  payment_received_amount  Float         @default(0)
+  payment_received_date    DateTime?
+  order_status             String        @default("confirmed") // confirmed, packed, dispatched, delivered, cancelled
+  dispatch_date            DateTime?
+  transport_name           String?
+  lr_number                String?
+  expected_delivery_date   DateTime?
+  delivery_confirmed       String        @default("no") // yes, no
+  delivery_date            DateTime?
+  feedback_rating          Int?
+  feedback_notes           String?
+  created_by               String        // staff member name or automated
+  notes                    String?
+  invoice_type             String        @default("B2C") // B2B, B2C
+  due_date                 DateTime?
+  awb_number               String?
+  shipment_id              String?
+  pod_url                  String?
+  pod_signature            String?
+  parent_order_id          String?
+  terms_accepted           Boolean       @default(false)
+  cash_flow_entries        CashFlow[]
+}
+
+model CashFlow {
+  entry_id          Int              @id @default(autoincrement())
+  date              DateTime         @default(now())
+  type              String           // income, expense
+  category          String           // order_payment, purchase_cost, freight, salary, rent, marketing, misc
+  description       String
+  amount            Float
+  sales_order_id    String?
+  purchase_order_id Int?
+  sales_order       SalesOrder?      @relation(fields: [sales_order_id], references: [order_id], onDelete: Cascade)
+  purchase_order    PurchaseOrder?   @relation(fields: [purchase_order_id], references: [purchase_order_id], onDelete: Cascade)
+  created_by        String
+}
+
+model Lead {
+  lead_id           Int          @id @default(autoincrement())
+  name              String
+  mobile            String       @unique
+  city              String
+  source            String       // instagram, facebook, google, whatsapp, website, reference
+  business_type     String       @default("OTHER") // OFFLINE_RETAIL, ONLINE_SELLER, BOUTIQUE, MINI_WHOLESALER, OTHER
+  score             Int          @default(0)
+  status            String       @default("new") // new, contacted, interested, registered, lost
+  notes             String?
+  created_date      DateTime     @default(now())
+  last_contact_date DateTime     @default(now())
+  assigned_to       String?      // staff member name
+  whatsapp_logs     WhatsAppLog[]
+}
+
+model Staff {
+  staff_id      Int      @id @default(autoincrement())
+  name          String
+  mobile        String   @unique
+  email         String   @unique
+  password_hash String
+  role          String   @default("SALES") // ADMIN, FOUNDER, SALES, INVENTORY, ACCOUNTS, CONTENT
+  permissions   String   // Comma-separated permissions list
+  status        String   @default("active") // active, inactive
+}
+
+model WhatsAppLog {
+  message_id     Int      @id @default(autoincrement())
+  contact_number String
+  direction      String   // incoming, outgoing
+  message_type   String   // text, image, document, button
+  message_content String
+  template_name  String?  // if automated template
+  status         String   @default("sent") // sent, delivered, read, failed
+  timestamp      DateTime @default(now())
+  handled_by     String   // ai, human, staff name
+  buyer_id       Int?
+  buyer          Buyer?   @relation(fields: [buyer_id], references: [buyer_id])
+  lead_id        Int?
+  lead           Lead?    @relation(fields: [lead_id], references: [lead_id])
+}
+
+model Notification {
+  notification_id Int      @id @default(autoincrement())
+  type            String   // low_stock, overdue_payment, new_lead, dispatch_due, order_received
+  message         String
+  linked_to_id    String?  // order_id, buyer_id, lead_id
+  status          String   @default("unread") // unread, read
+  created_at      DateTime @default(now())
+  for_role        String   @default("SALES") // ADMIN, FOUNDER, SALES, INVENTORY, ACCOUNTS
+}
+
+model AuditLog {
+  log_id      Int      @id @default(autoincrement())
+  timestamp   DateTime @default(now())
+  user_name   String
+  action      String
+  description String
+  linked_id   String?
+}

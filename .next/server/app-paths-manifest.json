@@ -1,12 +1,1 @@
-{
-  "/login/page": "app/login/page.js",
-  "/register/page": "app/register/page.js",
-  "/catalog/page": "app/catalog/page.js",
-  "/page": "app/page.js",
-  "/api/orders/route": "app/api/orders/route.js",
-  "/api/buyers/route": "app/api/buyers/route.js",
-  "/api/products/route": "app/api/products/route.js",
-  "/api/orders/[id]/invoice/route": "app/api/orders/[id]/invoice/route.js",
-  "/admin/page": "app/admin/page.js",
-  "/admin/orders/page": "app/admin/orders/page.js"
-}
+{}

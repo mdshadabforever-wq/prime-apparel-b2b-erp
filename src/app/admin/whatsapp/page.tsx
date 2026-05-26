@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { Tooltip } from "@/components/ui/Tooltip";
 import {
   MessageSquare,
   Send,
@@ -222,7 +223,9 @@ export default function AdminWhatsAppPage() {
               
               <div className="flex items-center gap-2">
                 <span className="text-[9px] font-bold text-slate-500 uppercase">Scorecard:</span>
-                <span className="py-0.5 px-2 rounded bg-gold/10 text-gold text-[10px] font-black">{leadScore} / 100</span>
+                <Tooltip content="AI-assisted buyer quality score computed from lead activity and credit history." position="bottom">
+                  <span className="py-0.5 px-2 rounded bg-gold/10 text-gold text-[10px] font-black cursor-help">{leadScore} / 100</span>
+                </Tooltip>
               </div>
             </div>
 
@@ -256,9 +259,13 @@ export default function AdminWhatsAppPage() {
                       {isIncoming ? (
                         <span>Buyer</span>
                       ) : isAI ? (
-                        <span className="text-emerald-400 font-semibold flex items-center gap-0.5"><Bot className="w-3 h-3" /> AI Bot</span>
+                        <Tooltip content="AI Chatbot Assistant responded using business knowledge bases." position="top">
+                          <span className="text-emerald-400 font-semibold flex items-center gap-0.5 cursor-help"><Bot className="w-3 h-3" /> AI Bot</span>
+                        </Tooltip>
                       ) : (
-                        <span className="text-gold font-semibold flex items-center gap-0.5"><User className="w-3 h-3 text-gold" /> Human Staff</span>
+                        <Tooltip content="Message sent manually by a registered sales or accounting representative." position="top">
+                          <span className="text-gold font-semibold flex items-center gap-0.5 cursor-help"><User className="w-3 h-3 text-gold" /> Human Staff</span>
+                        </Tooltip>
                       )}
                       <span>•</span>
                       <span>{new Date(c.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -287,12 +294,14 @@ export default function AdminWhatsAppPage() {
                   placeholder="Type manual reply as Staff Representative..."
                   className="flex-grow py-2 px-4 rounded-xl bg-slate-950 border border-slate-800 focus:border-gold outline-none text-xs text-white"
                 />
-                <button
-                  type="submit"
-                  className="py-2 px-4 bg-gold hover:bg-gold-600 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1"
-                >
-                  <Send className="w-3.5 h-3.5 text-slate-950" /> Send
-                </button>
+                <Tooltip content="Send human staff manual message override, suspending AI chatbot triggers temporarily." position="top">
+                  <button
+                    type="submit"
+                    className="py-2 px-4 bg-gold hover:bg-gold-600 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1 active:scale-95"
+                  >
+                    <Send className="w-3.5 h-3.5 text-slate-950" /> Send
+                  </button>
+                </Tooltip>
               </form>
             </div>
 
@@ -324,13 +333,15 @@ export default function AdminWhatsAppPage() {
                     required
                   />
                 </div>
-                <button
-                  type="submit"
-                  disabled={isReplying}
-                  className="w-full py-2 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-center text-xs transition-all flex items-center justify-center gap-1"
-                >
-                  <Send className="w-3.5 h-3.5 fill-current" /> Simulate Incoming Message
-                </button>
+                <Tooltip content="Simulate an incoming WhatsApp message sent by the buyer to test automated AI agent chatbot responses." position="top" className="w-full">
+                  <button
+                    type="submit"
+                    disabled={isReplying}
+                    className="w-full py-2 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-center text-xs transition-all flex items-center justify-center gap-1 active:scale-95"
+                  >
+                    <Send className="w-3.5 h-3.5 fill-current" /> Simulate Incoming Message
+                  </button>
+                </Tooltip>
               </form>
             </div>
 
@@ -338,18 +349,22 @@ export default function AdminWhatsAppPage() {
             <div className="flex flex-col gap-3 mt-6 border-t border-slate-800/80 pt-4">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fast Staff Templates</span>
               <div className="flex flex-col gap-2 text-xs">
-                <button
-                  onClick={() => sendTemplate("dispatch", "Aapka Sales Order 20260524-001 dispatch ho gaya hai standard transport se! LR consignment number: VT-10928374.")}
-                  className="w-full py-1.5 px-3 rounded bg-slate-950 border border-slate-800 hover:border-gold/30 hover:bg-slate-900 text-left text-[11px] text-slate-400 font-semibold transition-all truncate"
-                >
-                  📢 Dispatch Alert LR template
-                </button>
-                <button
-                  onClick={() => sendTemplate("payment", "Namaste! 😊 Prime Apparel Exports ki taraf se friendly payment reminder. Invoice #20260524-001 is due today.")}
-                  className="w-full py-1.5 px-3 rounded bg-slate-950 border border-slate-800 hover:border-gold/30 hover:bg-slate-900 text-left text-[11px] text-slate-400 font-semibold transition-all truncate"
-                >
-                  📢 Credit Payment due reminder
-                </button>
+                <Tooltip content="Instantly send a standardized WhatsApp message with transport dispatch carrier and LR tracking details." position="top" className="w-full">
+                  <button
+                    onClick={() => sendTemplate("dispatch", "Aapka Sales Order 20260524-001 dispatch ho gaya hai standard transport se! LR consignment number: VT-10928374.")}
+                    className="w-full py-1.5 px-3 rounded bg-slate-950 border border-slate-800 hover:border-gold/30 hover:bg-slate-900 text-left text-[11px] text-slate-400 font-semibold transition-all truncate active:scale-98"
+                  >
+                    📢 Dispatch Alert LR template
+                  </button>
+                </Tooltip>
+                <Tooltip content="Send a professional credit maturity payment outstanding reminder to the buyer's WhatsApp." position="top" className="w-full">
+                  <button
+                    onClick={() => sendTemplate("payment", "Namaste! 😊 Prime Apparel Exports ki taraf se friendly payment reminder. Invoice #20260524-001 is due today.")}
+                    className="w-full py-1.5 px-3 rounded bg-slate-950 border border-slate-800 hover:border-gold/30 hover:bg-slate-900 text-left text-[11px] text-slate-400 font-semibold transition-all truncate active:scale-98"
+                  >
+                    📢 Credit Payment due reminder
+                  </button>
+                </Tooltip>
               </div>
             </div>
 

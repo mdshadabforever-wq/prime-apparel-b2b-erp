@@ -1,8 +1,9 @@
 "use client";
-
+ 
 import { useState, useEffect } from "react";
 // Use namespace import for icons to avoid missing chunks.
 import * as LucideIcons from "lucide-react";
+import { Tooltip } from "@/components/ui/Tooltip";
 const { ShoppingCart, Truck, DollarSign, FileText, Plus, X, Search, Filter, CheckCircle, AlertTriangle, Clock, Sparkles } = LucideIcons;
 
 export default function AdminOrdersPage() {
@@ -30,10 +31,12 @@ export default function AdminOrdersPage() {
     buyerId: "",
     paymentTerms: "advance",
     notes: "",
+    depositAmount: "", // initial partial deposit
     items: [] as Array<{ skuId: string; qty: number; price: number }>
   });
 
   const [createItemInput, setCreateItemInput] = useState({ skuId: "", qty: 12 });
+  const [buyerSearchQuery, setBuyerSearchQuery] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -158,10 +161,20 @@ export default function AdminOrdersPage() {
     let discountPercent = 0;
     if (totalQty >= 50) discountPercent = 5;
     else if (totalQty >= 25) discountPercent = 3;
-    const discountAmount = Math.round((subtotal * discountPercent) / 100);
-    const finalAmount = subtotal - discountAmount;
-    const gstAmount = Math.round(finalAmount * 0.05);
-    const invoiceAmount = finalAmount + gstAmount;
+    const volumeDiscount = Math.round((subtotal * discountPercent) / 100);
+
+    const isPrepaid = createForm.paymentTerms === "advance" || createForm.paymentTerms === "partial";
+    const prepaidDiscount = isPrepaid ? Math.round(subtotal * 0.02) : 0;
+
+    const isCod = createForm.paymentTerms === "cod";
+    const codCharges = isCod ? Math.round(subtotal * 0.02) : 0;
+
+    const courierCharges = totalQty * 20;
+    const packagingCharges = 150;
+
+    const taxableAmount = subtotal - volumeDiscount - prepaidDiscount + codCharges + courierCharges + packagingCharges;
+    const gstAmount = Math.round(taxableAmount * 0.05);
+    const invoiceAmount = taxableAmount + gstAmount;
 
     if (invoiceAmount > 50000) {
       alert("Alert: E-Way Bill Mandatory!");
@@ -173,6 +186,7 @@ export default function AdminOrdersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...createForm,
+          depositAmount: Number(createForm.depositAmount) || 0,
           createdBy: "Amit Sharma" // Staff signature
         })
       });
@@ -181,12 +195,34 @@ export default function AdminOrdersPage() {
 
       // Success
       setActiveModal(null);
-      setCreateForm({ buyerId: "", paymentTerms: "advance", notes: "", items: [] });
+      setBuyerSearchQuery("");
+      setCreateForm({ buyerId: "", paymentTerms: "advance", notes: "", depositAmount: "", items: [] });
       fetchData();
     } catch (err: any) {
       alert(err.message || "Manual order creation failed.");
     }
   };
+
+  // Real-time manual checkout pricing estimator
+  const estSubtotal = createForm.items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const estQty = createForm.items.reduce((sum, item) => sum + item.qty, 0);
+  let estDiscountPercent = 0;
+  if (estQty >= 50) estDiscountPercent = 5;
+  else if (estQty >= 25) estDiscountPercent = 3;
+  const estVolumeDiscount = Math.round((estSubtotal * estDiscountPercent) / 100);
+
+  const estIsPrepaid = createForm.paymentTerms === "advance" || createForm.paymentTerms === "partial";
+  const estPrepaidDiscount = estIsPrepaid ? Math.round(estSubtotal * 0.02) : 0;
+
+  const estIsCod = createForm.paymentTerms === "cod";
+  const estCodCharges = estIsCod ? Math.round(estSubtotal * 0.02) : 0;
+
+  const estCourierCharges = estQty * 20;
+  const estPackagingCharges = estQty > 0 ? 150 : 0;
+
+  const estTaxableAmount = estSubtotal - estVolumeDiscount - estPrepaidDiscount + estCodCharges + estCourierCharges + estPackagingCharges;
+  const estGstAmount = Math.round(estTaxableAmount * 0.05);
+  const estInvoiceAmount = estTaxableAmount + estGstAmount;
 
   // Filter dynamic listings
   const filteredOrders = orders.filter((o) => {
@@ -217,61 +253,71 @@ export default function AdminOrdersPage() {
           </p>
         </div>
         
-        <button
-          onClick={() => setActiveModal("create")}
-          className="flex items-center gap-2 py-2.5 px-5 bg-gold hover:bg-gold-600 text-slate-950 font-extrabold rounded-xl shadow-lg shadow-gold/15 transition-all text-xs active:scale-95 w-full lg:w-auto justify-center"
-        >
-          <Plus className="w-4 h-4 text-slate-950 stroke-[3]" /> Add Order (Manual)
-        </button>
+        <Tooltip content="Manually draft a B2B sales order, select payment terms, and reserve warehouse inventory." position="bottom">
+          <button
+            onClick={() => setActiveModal("create")}
+            className="flex items-center gap-2 py-2.5 px-5 bg-gold hover:bg-gold-600 text-slate-950 font-extrabold rounded-xl shadow-lg shadow-gold/15 transition-all text-xs active:scale-95 w-full lg:w-auto justify-center"
+          >
+            <Plus className="w-4 h-4 text-slate-950 stroke-[3]" /> Add Order (Manual)
+          </button>
+        </Tooltip>
       </div>
 
       {/* KPI METRICS BARS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-gold/20 transition-all duration-300">
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Sales POs</p>
-            <p className="text-2xl font-outfit font-extrabold text-white mt-1">{orders.length}</p>
+        <Tooltip content="Cumulative B2B purchase orders generated this period." position="top" className="w-full">
+          <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-gold/20 transition-all duration-300 h-full">
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Sales POs</p>
+              <p className="text-2xl font-outfit font-extrabold text-white mt-1">{orders.length}</p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-gold group-hover:scale-110 transition-transform duration-300">
+              <ShoppingCart className="w-5 h-5" />
+            </div>
           </div>
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-gold group-hover:scale-110 transition-transform duration-300">
-            <ShoppingCart className="w-5 h-5" />
-          </div>
-        </div>
+        </Tooltip>
 
-        <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-300">
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Gross Booked Revenue</p>
-            <p className="text-2xl font-outfit font-extrabold text-emerald-400 mt-1">
-              ₹{orders.filter(o => o.order_status !== "cancelled").reduce((acc, o) => acc + (o.invoice_amount || 0), 0).toLocaleString()}
-            </p>
+        <Tooltip content="Aggregate billing amount across confirmed, packed, and shipped orders." position="top" className="w-full">
+          <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-300 h-full">
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Gross Booked Revenue</p>
+              <p className="text-2xl font-outfit font-extrabold text-emerald-400 mt-1">
+                ₹{orders.filter(o => o.order_status !== "cancelled").reduce((acc, o) => acc + (o.invoice_amount || 0), 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
+              <DollarSign className="w-5 h-5" />
+            </div>
           </div>
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
-            <DollarSign className="w-5 h-5" />
-          </div>
-        </div>
+        </Tooltip>
 
-        <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-blue-500/20 transition-all duration-300">
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Active Shipments</p>
-            <p className="text-2xl font-outfit font-extrabold text-blue-400 mt-1">
-              {orders.filter(o => o.order_status === "dispatched" || o.order_status === "packed").length} dispatches
-            </p>
+        <Tooltip content="Orders currently in packed or dispatched status transit." position="top" className="w-full">
+          <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-blue-500/20 transition-all duration-300 h-full">
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Active Shipments</p>
+              <p className="text-2xl font-outfit font-extrabold text-blue-400 mt-1">
+                {orders.filter(o => o.order_status === "dispatched" || o.order_status === "packed").length} dispatches
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-blue-400 group-hover:scale-110 transition-transform duration-300">
+              <Truck className="w-5 h-5" />
+            </div>
           </div>
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-blue-400 group-hover:scale-110 transition-transform duration-300">
-            <Truck className="w-5 h-5" />
-          </div>
-        </div>
+        </Tooltip>
 
-        <div className="glass-panel p-4 rounded-xl border border-red-500/10 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-red-500/20 transition-all duration-300 bg-red-950/5">
-          <div>
-            <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Outstanding Collection</p>
-            <p className="text-2xl font-outfit font-extrabold text-red-400 mt-1">
-              ₹{orders.filter(o => o.payment_status !== "paid" && o.order_status !== "cancelled").reduce((acc, o) => acc + ((o.invoice_amount || 0) - (o.payment_received_amount || 0)), 0).toLocaleString()}
-            </p>
+        <Tooltip content="Total receivable dues pending across unpaid and partial credit invoices." position="top" className="w-full">
+          <div className="glass-panel p-4 rounded-xl border border-red-500/10 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-red-500/20 transition-all duration-300 bg-red-950/5 h-full">
+            <div>
+              <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Outstanding Collection</p>
+              <p className="text-2xl font-outfit font-extrabold text-red-400 mt-1">
+                ₹{orders.filter(o => o.payment_status !== "paid" && o.order_status !== "cancelled").reduce((acc, o) => acc + ((o.invoice_amount || 0) - (o.payment_received_amount || 0)), 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-red-400 group-hover:scale-110 transition-transform duration-300">
+              <Clock className="w-5 h-5 text-red-400 animate-pulse" />
+            </div>
           </div>
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-red-400 group-hover:scale-110 transition-transform duration-300">
-            <Clock className="w-5 h-5 text-red-400 animate-pulse" />
-          </div>
-        </div>
+        </Tooltip>
       </div>
 
       {/* FILTERS PANEL */}
@@ -367,148 +413,184 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="p-4 font-black text-white text-sm">₹{o.invoice_amount.toLocaleString()}</td>
                       <td className="p-4">
-                        <span className={`py-1 px-2.5 rounded-md font-bold uppercase text-[9px] tracking-wider ${
+                        <Tooltip content={
                           o.payment_status === "paid"
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            ? "Full payment received and settled in the books."
                             : o.payment_status === "partial"
-                            ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                            ? "Partial deposit received. Pending remaining balance settlement."
                             : o.payment_status === "overdue"
-                            ? "bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse"
-                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                        }`}>
-                          {o.payment_status}
-                        </span>
+                            ? "Payment is overdue past the agreed buyer credit days limit!"
+                            : "Payment is pending invoice maturity date."
+                        } position="top">
+                          <span className={`py-1 px-2.5 rounded-md font-bold uppercase text-[9px] tracking-wider ${
+                            o.payment_status === "paid"
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              : o.payment_status === "partial"
+                              ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                              : o.payment_status === "overdue"
+                              ? "bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse"
+                              : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                          }`}>
+                            {o.payment_status}
+                          </span>
+                        </Tooltip>
                       </td>
                       <td className="p-4">
-                        <span className={`py-1 px-2.5 rounded-md font-extrabold uppercase text-[9px] tracking-wider ${
+                        <Tooltip content={
                           o.order_status === "delivered"
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            ? "Shipment successfully delivered and confirmed at the buyer's destination."
                             : o.order_status === "confirmed"
-                            ? "bg-gold/15 text-gold border border-gold/25"
+                            ? "Sales order confirmed. Items reserved in active inventory."
                             : o.order_status === "packed"
-                            ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                            ? "Order packed, barcoded, and waiting in dispatch warehouse area."
                             : o.order_status === "dispatched"
-                            ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                            : "bg-red-500/10 text-red-400 border border-red-500/20"
-                        }`}>
-                          {o.order_status}
-                        </span>
+                            ? "Shipped. Consignment handed over to transport carrier."
+                            : "Order cancelled. Ledger entries and inventory allocations reverted."
+                        } position="top">
+                          <span className={`py-1 px-2.5 rounded-md font-extrabold uppercase text-[9px] tracking-wider ${
+                            o.order_status === "delivered"
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              : o.order_status === "confirmed"
+                              ? "bg-gold/15 text-gold border border-gold/25"
+                              : o.order_status === "packed"
+                              ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                              : o.order_status === "dispatched"
+                              ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                              : "bg-red-500/10 text-red-400 border border-red-500/20"
+                          }`}>
+                            {o.order_status}
+                          </span>
+                        </Tooltip>
                       </td>
                       <td className="p-4 pr-6 text-right">
                         <div className="flex justify-end gap-2 items-center">
-                          <button
-                            onClick={() => { window.open(`/api/orders/${o.order_id}/invoice`, "_blank"); }}
-                            className="p-1.5 rounded-lg bg-slate-950 border border-white/5 hover:border-gold hover:text-gold text-slate-400 transition-all active:scale-90"
-                            title="Generate Invoice"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                          </button>
+                          <Tooltip content="Generate and print the GST-compliant B2B invoice PDF for this order." position="left">
+                            <button
+                              onClick={() => { window.open(`/api/orders/${o.order_id}/invoice`, "_blank"); }}
+                              className="p-1.5 rounded-lg bg-slate-950 border border-white/5 hover:border-gold hover:text-gold text-slate-400 transition-all active:scale-90"
+                              title="Generate Invoice"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </button>
+                          </Tooltip>
                           
                           {(o.order_status === "confirmed" || o.order_status === "packed") && (
-                            <button
-                              onClick={async () => {
-                                const parts = prompt("Enter number of split invoices (2-10):", "2");
-                                if (!parts) return;
-                                const num = Number(parts);
-                                if (isNaN(num) || num < 2 || num > 10) {
-                                  alert("Please enter a valid number between 2 and 10.");
-                                  return;
-                                }
-                                if (confirm(`Are you sure you want to split this order into ${parts} invoices? This will maintain inventory/accounting and create parent-child mapping.`)) {
-                                  try {
-                                    const res = await fetch(`/api/orders/${o.order_id}/split`, {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ parts: num, staffName: "Amit Sharma" })
-                                    });
-                                    const data = await res.json();
-                                    if (!res.ok) throw new Error(data.error || "Failed to split order.");
-                                    alert(data.message || "Order split successfully.");
-                                    fetchData();
-                                  } catch (err: any) {
-                                    alert(err.message || "Split failed.");
+                            <Tooltip content="Split B2B order into multiple smaller invoice shipments to match transport carrier limits." position="left">
+                              <button
+                                onClick={async () => {
+                                  const parts = prompt("Enter number of split invoices (2-10):", "2");
+                                  if (!parts) return;
+                                  const num = Number(parts);
+                                  if (isNaN(num) || num < 2 || num > 10) {
+                                    alert("Please enter a valid number between 2 and 10.");
+                                    return;
                                   }
-                                }
-                              }}
-                              className="py-1 px-2.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white font-extrabold transition-all text-[10px] uppercase tracking-wider active:scale-95"
-                            >
-                              Split
-                            </button>
+                                  if (confirm(`Are you sure you want to split this order into ${parts} invoices? This will maintain inventory/accounting and create parent-child mapping.`)) {
+                                    try {
+                                      const res = await fetch(`/api/orders/${o.order_id}/split`, {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ parts: num, staffName: "Amit Sharma" })
+                                      });
+                                      const data = await res.json();
+                                      if (!res.ok) throw new Error(data.error || "Failed to split order.");
+                                      alert(data.message || "Order split successfully.");
+                                      fetchData();
+                                    } catch (err: any) {
+                                      alert(err.message || "Split failed.");
+                                    }
+                                  }
+                                }}
+                                className="py-1 px-2.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white font-extrabold transition-all text-[10px] uppercase tracking-wider active:scale-95"
+                              >
+                                Split
+                              </button>
+                            </Tooltip>
                           )}
 
                           {o.order_status === "confirmed" && (
-                            <button
-                              onClick={async () => {
-                                if (confirm("Mark order as Packed & Ready for carrier booking?")) {
-                                  const res = await fetch(`/api/orders/${o.order_id}`, {
-                                    method: "PUT",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ orderStatus: "packed" })
-                                  });
-                                  if (res.ok) fetchData();
-                                  else alert("Failed to update status.");
-                                }
-                              }}
-                              className="py-1 px-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white font-extrabold transition-all text-[10px] uppercase tracking-wider active:scale-95"
-                            >
-                              Pack
-                            </button>
+                            <Tooltip content="Mark order status as packed and ready for logistics carrier booking." position="left">
+                              <button
+                                onClick={async () => {
+                                  if (confirm("Mark order as Packed & Ready for carrier booking?")) {
+                                    const res = await fetch(`/api/orders/${o.order_id}`, {
+                                      method: "PUT",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ orderStatus: "packed" })
+                                    });
+                                    if (res.ok) fetchData();
+                                    else alert("Failed to update status.");
+                                  }
+                                }}
+                                className="py-1 px-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white font-extrabold transition-all text-[10px] uppercase tracking-wider active:scale-95"
+                              >
+                                Pack
+                              </button>
+                            </Tooltip>
                           )}
                           
                           {o.order_status === "packed" && (
-                            <button
-                              onClick={() => { setSelectedOrder(o); setActiveModal("dispatch"); }}
-                              className="py-1 px-2.5 rounded-lg bg-gold/10 border border-gold/20 text-gold hover:bg-gold hover:text-slate-950 font-extrabold transition-all text-[10px] uppercase tracking-wider flex items-center gap-1 active:scale-95"
-                            >
-                              <Truck className="w-3 h-3" /> Dispatch
-                            </button>
+                            <Tooltip content="Record transport receipt details (Lorry Receipt / LR) and set dispatched status." position="left">
+                              <button
+                                onClick={() => { setSelectedOrder(o); setActiveModal("dispatch"); }}
+                                className="py-1 px-2.5 rounded-lg bg-gold/10 border border-gold/20 text-gold hover:bg-gold hover:text-slate-950 font-extrabold transition-all text-[10px] uppercase tracking-wider flex items-center gap-1 active:scale-95"
+                              >
+                                <Truck className="w-3 h-3" /> Dispatch
+                              </button>
+                            </Tooltip>
                           )}
                           
                           {o.order_status === "dispatched" && (
-                            <button
-                              onClick={async () => {
-                                if (confirm("Confirm that parcel was Delivered to buyer shop?")) {
-                                  const res = await fetch(`/api/orders/${o.order_id}`, {
-                                    method: "PUT",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ orderStatus: "delivered" })
-                                  });
-                                  if (res.ok) fetchData();
-                                  else alert("Failed to update status.");
-                                }
-                              }}
-                              className="py-1 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white font-extrabold transition-all text-[10px] uppercase tracking-wider flex items-center gap-1 active:scale-95"
-                            >
-                              Deliver
-                            </button>
+                            <Tooltip content="Confirm that the shipment parcel has reached the buyer's retail shop successfully." position="left">
+                              <button
+                                onClick={async () => {
+                                  if (confirm("Confirm that parcel was Delivered to buyer shop?")) {
+                                    const res = await fetch(`/api/orders/${o.order_id}`, {
+                                      method: "PUT",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ orderStatus: "delivered" })
+                                    });
+                                    if (res.ok) fetchData();
+                                    else alert("Failed to update status.");
+                                  }
+                                }}
+                                className="py-1 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white font-extrabold transition-all text-[10px] uppercase tracking-wider flex items-center gap-1 active:scale-95"
+                              >
+                                Deliver
+                              </button>
+                            </Tooltip>
                           )}
                           
                           {o.payment_status !== "paid" && (
-                            <button
-                              onClick={() => { setSelectedOrder(o); setActiveModal("payment"); }}
-                              className="py-1 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white font-extrabold transition-all text-[10px] uppercase tracking-wider flex items-center gap-1 active:scale-95"
-                            >
-                              <DollarSign className="w-3 h-3" /> Pay
-                            </button>
+                            <Tooltip content="Record manual or bank payment received towards this sales ledger invoice." position="left">
+                              <button
+                                onClick={() => { setSelectedOrder(o); setActiveModal("payment"); }}
+                                className="py-1 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white font-extrabold transition-all text-[10px] uppercase tracking-wider flex items-center gap-1 active:scale-95"
+                              >
+                                <DollarSign className="w-3 h-3" /> Pay
+                              </button>
+                            </Tooltip>
                           )}
                           
                           {o.order_status !== "delivered" && o.order_status !== "cancelled" && (
-                            <button
-                              onClick={async () => {
-                                if (confirm("Are you absolutely sure you want to CANCEL this B2B Sales Order? All reserved/dispatched stock will revert!")) {
-                                  const res = await fetch(`/api/orders/${o.order_id}`, {
-                                    method: "PUT",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ orderStatus: "cancelled" })
-                                  });
-                                  if (res.ok) fetchData();
-                                  else alert("Failed to cancel order.");
-                                }
-                              }}
-                              className="py-1 px-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white font-bold transition-all text-[10px] uppercase tracking-wider active:scale-95"
-                            >
-                              Cancel
-                            </button>
+                            <Tooltip content="Cancel B2B Sales Order and automatically revert reserved physical inventory to stock." position="left">
+                              <button
+                                onClick={async () => {
+                                  if (confirm("Are you absolutely sure you want to CANCEL this B2B Sales Order? All reserved/dispatched stock will revert!")) {
+                                    const res = await fetch(`/api/orders/${o.order_id}`, {
+                                      method: "PUT",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ orderStatus: "cancelled" })
+                                    });
+                                    if (res.ok) fetchData();
+                                    else alert("Failed to cancel order.");
+                                  }
+                                }}
+                                className="py-1 px-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white font-bold transition-all text-[10px] uppercase tracking-wider active:scale-95"
+                              >
+                                Cancel
+                              </button>
+                            </Tooltip>
                           )}
                         </div>
                       </td>
@@ -730,20 +812,32 @@ export default function AdminOrdersPage() {
               <div className="border-t border-slate-300 pt-3 flex flex-col gap-1 text-right max-w-xs ml-auto font-semibold">
                 <div className="flex justify-between text-slate-500">
                   <span>Gross Subtotal:</span>
-                  <span>₹{selectedOrder.subtotal_amount}</span>
+                  <span>₹{selectedOrder.subtotal_amount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-red-500">
                   <span>Bulk Scheme Discount:</span>
-                  <span>-₹{selectedOrder.discount_amount}</span>
+                  <span>-₹{selectedOrder.discount_amount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-slate-500">
                   <span>GST Taxes (5%):</span>
-                  <span>+₹{selectedOrder.gst_amount}</span>
+                  <span>+₹{selectedOrder.gst_amount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between border-t border-slate-300 pt-2 text-xs font-black text-slate-950">
                   <span>Invoice Total:</span>
-                  <span>₹{selectedOrder.invoice_amount}</span>
+                  <span>₹{selectedOrder.invoice_amount.toLocaleString()}</span>
                 </div>
+                {selectedOrder.payment_received_amount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-bold text-[10px] mt-1">
+                    <span>Payment Received:</span>
+                    <span>-₹{selectedOrder.payment_received_amount.toLocaleString()}</span>
+                  </div>
+                )}
+                {selectedOrder.invoice_amount - selectedOrder.payment_received_amount > 0 && (
+                  <div className="flex justify-between text-red-600 border-t border-dashed border-slate-200 pt-1.5 font-bold text-xs mt-1">
+                    <span>Pending Balance Due:</span>
+                    <span>₹{(selectedOrder.invoice_amount - selectedOrder.payment_received_amount).toLocaleString()}</span>
+                  </div>
+                )}
               </div>
 
               {/* T & C */}
@@ -775,7 +869,7 @@ export default function AdminOrdersPage() {
               </h3>
               <button
                 type="button"
-                onClick={() => setActiveModal(null)}
+                onClick={() => { setActiveModal(null); setBuyerSearchQuery(""); }}
                 className="p-1 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-all"
               >
                 <X className="w-5 h-5" />
@@ -783,6 +877,67 @@ export default function AdminOrdersPage() {
             </div>
 
             {/* Buyer Select */}
+            <div className="flex flex-col gap-1.5 relative">
+              <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Search & Filter Buyers</label>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3.5" />
+                <input
+                  type="text"
+                  value={buyerSearchQuery}
+                  onChange={(e) => setBuyerSearchQuery(e.target.value)}
+                  placeholder="Type Shop Name, Mobile, Email, or Instagram handle..."
+                  className="w-full py-2.5 pl-9 pr-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white focus:ring-2 focus:ring-gold/10 transition-all placeholder-slate-700"
+                />
+              </div>
+
+              {/* Autocomplete Popup Suggestions */}
+              {buyerSearchQuery.trim() !== "" && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto bg-slate-900 border border-white/10 rounded-xl shadow-2xl p-1.5 flex flex-col gap-1 backdrop-blur-md">
+                  {buyers
+                    .filter((b) => {
+                      const query = buyerSearchQuery.toLowerCase();
+                      return (
+                        b.business_name.toLowerCase().includes(query) ||
+                        b.full_name.toLowerCase().includes(query) ||
+                        b.mobile.toLowerCase().includes(query) ||
+                        (b.email && b.email.toLowerCase().includes(query)) ||
+                        (b.instagram_link && b.instagram_link.toLowerCase().includes(query))
+                      );
+                    })
+                    .map((b) => (
+                      <button
+                        key={b.buyer_id}
+                        type="button"
+                        onClick={() => {
+                          setCreateForm((p) => ({ ...p, buyerId: String(b.buyer_id) }));
+                          setBuyerSearchQuery(""); // Close popup on selection
+                        }}
+                        className="w-full text-left py-2 px-3 hover:bg-gold/10 hover:text-gold text-xs transition-colors rounded-lg flex flex-col gap-0.5"
+                      >
+                        <span className="font-bold text-white">{b.business_name}</span>
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          {b.full_name} • {b.mobile} • {b.city}
+                        </span>
+                      </button>
+                    ))}
+                  {buyers.filter((b) => {
+                    const query = buyerSearchQuery.toLowerCase();
+                    return (
+                      b.business_name.toLowerCase().includes(query) ||
+                      b.full_name.toLowerCase().includes(query) ||
+                      b.mobile.toLowerCase().includes(query) ||
+                      (b.email && b.email.toLowerCase().includes(query)) ||
+                      (b.instagram_link && b.instagram_link.toLowerCase().includes(query))
+                    );
+                  }).length === 0 && (
+                    <span className="text-[10px] text-slate-500 py-3 text-center font-semibold">
+                      No matching B2B buyers found
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Select Approved B2B Buyer *</label>
               <select
@@ -871,7 +1026,64 @@ export default function AdminOrdersPage() {
               )}
             </div>
 
-            {/* Payment Terms & Notes */}
+            {/* Live estimated transparent B2B wholesale settlement breakdown */}
+            {createForm.items.length > 0 && (
+              <div className="bg-slate-950 p-4 rounded-xl border border-white/5 flex flex-col gap-2 shadow-inner text-xs font-semibold text-slate-400">
+                <span className="text-[10px] text-gold font-bold uppercase tracking-wider">Live Checkout Settlement Estimate</span>
+                <div className="flex justify-between border-b border-white/5 pb-1">
+                  <span>Product Subtotal ({estQty} pcs):</span>
+                  <span className="text-white">₹{estSubtotal.toLocaleString()}</span>
+                </div>
+                {estVolumeDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-400">
+                    <span>Bulk Scheme Discount ({estDiscountPercent}%):</span>
+                    <span>-₹{estVolumeDiscount.toLocaleString()}</span>
+                  </div>
+                )}
+                {estPrepaidDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-400">
+                    <span>Prepaid Discount (2%):</span>
+                    <span>-₹{estPrepaidDiscount.toLocaleString()}</span>
+                  </div>
+                )}
+                {estCodCharges > 0 && (
+                  <div className="flex justify-between text-amber-500">
+                    <span>COD Collection Charges (2%):</span>
+                    <span>+₹{estCodCharges.toLocaleString()}</span>
+                  </div>
+                )}
+                {estCourierCharges > 0 && (
+                  <div className="flex justify-between">
+                    <span>Courier / Freight Charges:</span>
+                    <span className="text-white">+₹{estCourierCharges.toLocaleString()}</span>
+                  </div>
+                )}
+                {estPackagingCharges > 0 && (
+                  <div className="flex justify-between">
+                    <span>QC Sack Packaging Charge:</span>
+                    <span className="text-white">+₹{estPackagingCharges.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-[11px] font-bold text-slate-300 border-t border-white/5 pt-1.5">
+                  <span>Taxable Value:</span>
+                  <span>₹{estTaxableAmount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Garments GST (5%):</span>
+                  <span className="text-white">+₹{estGstAmount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm font-black text-white border-t border-white/10 pt-1.5 animate-pulse">
+                  <span>Final Estimate:</span>
+                  <span className="text-gold">₹{estInvoiceAmount.toLocaleString()}</span>
+                </div>
+                {estIsPrepaid && (
+                  <span className="text-[9px] text-emerald-400 mt-1 font-bold">
+                    🎉 You save ₹{(estPrepaidDiscount + Math.round(estSubtotal * 0.02)).toLocaleString()} on this order by choosing Prepaid payment terms!
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Payment Terms Option *</label>
@@ -880,11 +1092,31 @@ export default function AdminOrdersPage() {
                   onChange={(e) => setCreateForm((p) => ({ ...p, paymentTerms: e.target.value }))}
                   className="py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-slate-300 font-semibold cursor-pointer"
                 >
-                  <option value="advance">Advance Payment (assume paid)</option>
+                  <option value="advance">Full Payment (Advance - Paid)</option>
+                  <option value="partial">Partial Payment (Deposit)</option>
+                  <option value="cod">Cash on Delivery (COD)</option>
                   <option value="7days">7 Days Credit Terms</option>
                   <option value="15days">15 Days Credit Terms</option>
                   <option value="30days">30 Days Credit Terms</option>
                 </select>
+
+                {createForm.paymentTerms !== "advance" && (
+                  <div className="flex flex-col gap-1 mt-2 animate-fade-in">
+                    <label className="text-[10px] text-gold font-bold uppercase tracking-wider">
+                      {createForm.paymentTerms === "partial"
+                        ? "Advance Deposit Paid (INR) *"
+                        : "Optional Deposit / Paid Amount (INR)"}
+                    </label>
+                    <input
+                      type="number"
+                      value={createForm.depositAmount}
+                      onChange={(e) => setCreateForm((p) => ({ ...p, depositAmount: e.target.value }))}
+                      placeholder={createForm.paymentTerms === "partial" ? "e.g. 5000" : "Optional (e.g. 2000)"}
+                      className="py-2 px-2.5 rounded-xl bg-slate-950 border border-gold/30 focus:border-gold outline-none text-xs text-white focus:ring-2 focus:ring-gold/10 transition-all placeholder-slate-700"
+                      required={createForm.paymentTerms === "partial"}
+                    />
+                  </div>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Optional Operator Notes</label>
@@ -901,7 +1133,7 @@ export default function AdminOrdersPage() {
             <div className="flex justify-end gap-3 pt-3 border-t border-white/5">
               <button
                 type="button"
-                onClick={() => setActiveModal(null)}
+                onClick={() => { setActiveModal(null); setBuyerSearchQuery(""); }}
                 className="py-2.5 px-4 rounded-xl border border-white/5 text-slate-400 text-xs hover:text-white hover:bg-white/5 transition-all font-semibold active:scale-95"
               >
                 Cancel

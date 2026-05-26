@@ -57,7 +57,7 @@ async function runE2E() {
 
   const browser = await puppeteer.launch({
     headless: false,
-    slowMo: 150, // Delays Puppeteer operations by 150ms so you can visually follow along easily
+    slowMo: 20, // Delays Puppeteer operations by 20ms as requested
     defaultViewport: { width: 1280, height: 800 },
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });

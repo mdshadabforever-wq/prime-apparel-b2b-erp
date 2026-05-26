@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Tooltip } from "@/components/ui/Tooltip";
 import {
   Package,
   Search,
@@ -250,120 +251,138 @@ export default function AdminStockPage() {
         </div>
         
         <div className="flex flex-wrap gap-2 w-full lg:w-auto items-center">
-          <button
-            onClick={() => setIsAddOpen(true)}
-            className="py-2.5 px-4 rounded-xl bg-gold hover:bg-gold-600 text-slate-950 font-extrabold text-xs transition-all flex items-center gap-2 shadow-lg shadow-gold/15 active:scale-95"
-          >
-            <Plus className="w-4 h-4 text-slate-950 stroke-[3]" /> Add New SKU
-          </button>
+          <Tooltip content="Register a new design SKU, configure cost structures, and assign initial warehouse stock." position="bottom">
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="py-2.5 px-4 rounded-xl bg-gold hover:bg-gold-600 text-slate-950 font-extrabold text-xs transition-all flex items-center gap-2 shadow-lg shadow-gold/15 active:scale-95"
+            >
+              <Plus className="w-4 h-4 text-slate-950 stroke-[3]" /> Add New SKU
+            </button>
+          </Tooltip>
           
-          <button
-            onClick={() => {
-              if (confirm("Export entire SKU Product catalog to CSV spreadsheet?")) {
-                window.open("/api/export?type=products", "_blank");
-              }
-            }}
-            className="py-2.5 px-4 rounded-xl border border-white/5 bg-slate-950 text-slate-400 hover:text-white font-bold text-xs transition-all hover:bg-slate-900 active:scale-95"
-          >
-            Export CSV
-          </button>
-          
-          <label className="py-2.5 px-4 rounded-xl border border-white/5 bg-slate-950 text-slate-400 hover:text-white font-bold text-xs transition-all cursor-pointer hover:bg-slate-900 flex items-center justify-center active:scale-95">
-            Import CSV
-            <input
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={async (e) => {
-                const files = e.target.files;
-                if (!files || files.length === 0) return;
-                const file = files[0];
-                const reader = new FileReader();
-                reader.onload = async (evt) => {
-                  const text = evt.target?.result;
-                  if (typeof text !== "string") return;
-                  try {
-                    const res = await fetch("/api/import", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ csvContent: text })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || "Import failed");
-                    alert(data.message || "Bulk import completed successfully.");
-                    fetchProducts();
-                  } catch (err: any) {
-                    alert(err.message);
-                  }
-                };
-                reader.readAsText(file);
+          <Tooltip content="Download the entire active warehouse stock and SKU master catalog as a CSV spreadsheet." position="bottom">
+            <button
+              onClick={() => {
+                if (confirm("Export entire SKU Product catalog to CSV spreadsheet?")) {
+                  window.open("/api/export?type=products", "_blank");
+                }
               }}
-            />
-          </label>
+              className="py-2.5 px-4 rounded-xl border border-white/5 bg-slate-950 text-slate-400 hover:text-white font-bold text-xs transition-all hover:bg-slate-900 active:scale-95"
+            >
+              Export CSV
+            </button>
+          </Tooltip>
           
-          <button
-            onClick={() => setQuickFilter("low")}
-            className="py-2.5 px-4 rounded-xl border border-red-500/20 text-red-400 bg-red-500/5 hover:bg-red-500/10 font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
-          >
-            <AlertTriangle className="w-4 h-4 text-red-400 animate-pulse" /> Low Stock
-          </button>
+          <Tooltip content="Upload a CSV file to bulk create or update product catalog entries in the database." position="bottom">
+            <label className="py-2.5 px-4 rounded-xl border border-white/5 bg-slate-950 text-slate-400 hover:text-white font-bold text-xs transition-all cursor-pointer hover:bg-slate-900 flex items-center justify-center active:scale-95">
+              Import CSV
+              <input
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={async (e) => {
+                  const files = e.target.files;
+                  if (!files || files.length === 0) return;
+                  const file = files[0];
+                  const reader = new FileReader();
+                  reader.onload = async (evt) => {
+                    const text = evt.target?.result;
+                    if (typeof text !== "string") return;
+                    try {
+                      const res = await fetch("/api/import", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ csvContent: text })
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || "Import failed");
+                      alert(data.message || "Bulk import completed successfully.");
+                      fetchProducts();
+                    } catch (err: any) {
+                      alert(err.message);
+                    }
+                  };
+                  reader.readAsText(file);
+                }}
+              />
+            </label>
+          </Tooltip>
           
-          <button
-            onClick={() => setQuickFilter("dead")}
-            className="py-2.5 px-4 rounded-xl border border-white/5 bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-900 font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
-          >
-            <TrendingDown className="w-4 h-4 text-slate-500" /> Dead Stock
-          </button>
+          <Tooltip content="Filter the SKU grid to display only items that are running low (below 10 pieces)." position="bottom">
+            <button
+              onClick={() => setQuickFilter("low")}
+              className="py-2.5 px-4 rounded-xl border border-red-500/20 text-red-400 bg-red-500/5 hover:bg-red-500/10 font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
+            >
+              <AlertTriangle className="w-4 h-4 text-red-400 animate-pulse" /> Low Stock
+            </button>
+          </Tooltip>
+          
+          <Tooltip content="Sort product catalog in ascending order of historical sales to identify stagnant inventory." position="bottom">
+            <button
+              onClick={() => setQuickFilter("dead")}
+              className="py-2.5 px-4 rounded-xl border border-white/5 bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-900 font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
+            >
+              <TrendingDown className="w-4 h-4 text-slate-500" /> Dead Stock
+            </button>
+          </Tooltip>
         </div>
       </div>
 
       {/* METRICS OVERVIEW */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-gold/20 transition-all duration-300">
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Active SKUs</p>
-            <p className="text-2xl font-outfit font-extrabold text-white mt-1">{products.length}</p>
+        <Tooltip content="Total unique design product codes registered in our catalog." position="top" className="w-full">
+          <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-gold/20 transition-all duration-300 h-full">
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Active SKUs</p>
+              <p className="text-2xl font-outfit font-extrabold text-white mt-1">{products.length}</p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-gold group-hover:scale-110 transition-transform duration-300">
+              <Package className="w-5 h-5" />
+            </div>
           </div>
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-gold group-hover:scale-110 transition-transform duration-300">
-            <Package className="w-5 h-5" />
-          </div>
-        </div>
+        </Tooltip>
 
-        <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-gold/20 transition-all duration-300">
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Warehouse Pieces</p>
-            <p className="text-2xl font-outfit font-extrabold text-white mt-1">
-              {products.reduce((acc, p) => acc + (p.qty_available || 0), 0)} pcs
-            </p>
+        <Tooltip content="Total sum of physical pieces currently stored across all design SKUs." position="top" className="w-full">
+          <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-gold/20 transition-all duration-300 h-full">
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Warehouse Pieces</p>
+              <p className="text-2xl font-outfit font-extrabold text-white mt-1">
+                {products.reduce((acc, p) => acc + (p.qty_available || 0), 0)} pcs
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-blue-400 group-hover:scale-110 transition-transform duration-300">
+              <TrendingDown className="w-5 h-5 rotate-180" />
+            </div>
           </div>
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-blue-400 group-hover:scale-110 transition-transform duration-300">
-            <TrendingDown className="w-5 h-5 rotate-180" />
-          </div>
-        </div>
+        </Tooltip>
 
-        <div className="glass-panel p-4 rounded-xl border border-red-500/10 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-red-500/20 transition-all duration-300 bg-red-950/5">
-          <div>
-            <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Low Stock Alerts</p>
-            <p className="text-2xl font-outfit font-extrabold text-red-400 mt-1">
-              {products.filter(p => p.qty_available > 0 && p.qty_available < 10).length} SKUs
-            </p>
+        <Tooltip content="Number of design SKUs with physical stock count below safety threshold (10 pieces)." position="top" className="w-full">
+          <div className="glass-panel p-4 rounded-xl border border-red-500/10 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-red-500/20 transition-all duration-300 bg-red-950/5 h-full">
+            <div>
+              <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Low Stock Alerts</p>
+              <p className="text-2xl font-outfit font-extrabold text-red-400 mt-1">
+                {products.filter(p => p.qty_available > 0 && p.qty_available < 10).length} SKUs
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-red-400 group-hover:scale-110 transition-transform duration-300">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+            </div>
           </div>
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-red-400 group-hover:scale-110 transition-transform duration-300">
-            <AlertTriangle className="w-5 h-5 text-red-400" />
-          </div>
-        </div>
+        </Tooltip>
 
-        <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-300">
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Out Of Stock</p>
-            <p className="text-2xl font-outfit font-extrabold text-slate-400 mt-1">
-              {products.filter(p => p.qty_available === 0).length} SKUs
-            </p>
+        <Tooltip content="Number of design SKUs currently at zero physical inventory." position="top" className="w-full">
+          <div className="glass-panel p-4 rounded-xl border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-300 h-full">
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Out Of Stock</p>
+              <p className="text-2xl font-outfit font-extrabold text-slate-400 mt-1">
+                {products.filter(p => p.qty_available === 0).length} SKUs
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
+              <CheckCircle className="w-5 h-5" />
+            </div>
           </div>
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
-            <CheckCircle className="w-5 h-5" />
-          </div>
-        </div>
+        </Tooltip>
       </div>
 
       {/* FILTER CONTROLLERS */}
@@ -474,57 +493,71 @@ export default function AdminStockPage() {
                       </td>
                       <td className="p-4 text-center font-bold text-slate-400">{p.qty_reserved} pcs</td>
                       <td className="p-4">
-                        <span className="font-extrabold text-gold text-sm">₹{p.standard_price}</span>
-                        <span className="text-[9px] text-slate-500 font-semibold block">per piece</span>
+                        <Tooltip content="Standard B2B wholesale selling price per piece offered to buyers." position="top">
+                          <span className="font-extrabold text-gold text-sm block">₹{p.standard_price}</span>
+                          <span className="text-[9px] text-slate-500 font-semibold block">per piece</span>
+                        </Tooltip>
                       </td>
                       <td className="p-4">
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-slate-300">Landed: ₹{p.landed_cost}</span>
-                          <span className="text-[9px] text-emerald-400 font-bold mt-0.5 flex items-center gap-0.5">
-                            <Sparkles className="w-2.5 h-2.5 text-emerald-400" /> Margin: {p.margin_percent}%
-                          </span>
-                        </div>
+                        <Tooltip content="Sourcing price includes fabric procurement, logistics freight, and manufacturing overhead costs." position="top">
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-slate-300">Landed: ₹{p.landed_cost}</span>
+                            <span className="text-[9px] text-emerald-400 font-bold mt-0.5 flex items-center gap-0.5">
+                              <Sparkles className="w-2.5 h-2.5 text-emerald-400" /> Margin: {p.margin_percent}%
+                            </span>
+                          </div>
+                        </Tooltip>
                       </td>
                       <td className="p-4">
-                        <span className={`py-1 px-2.5 rounded-md font-bold uppercase text-[9px] tracking-wider ${
+                        <Tooltip content={
                           p.qty_available >= 10
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            ? "Sufficient physical stock level to fulfill active B2B orders."
                             : p.qty_available > 0
-                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse"
-                            : "bg-red-500/10 text-red-400 border border-red-500/20"
-                        }`}>
-                          {p.qty_available >= 10 ? "Available" : p.qty_available > 0 ? "Low Stock" : "Out of stock"}
-                        </span>
+                            ? "Inventory level is below safety threshold! Reorder from manufacturer immediately."
+                            : "No physical inventory left in warehouse. Sales orders locked for this SKU."
+                        } position="top">
+                          <span className={`py-1 px-2.5 rounded-md font-bold uppercase text-[9px] tracking-wider ${
+                            p.qty_available >= 10
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              : p.qty_available > 0
+                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse"
+                              : "bg-red-500/10 text-red-400 border border-red-500/20"
+                          }`}>
+                            {p.qty_available >= 10 ? "Available" : p.qty_available > 0 ? "Low Stock" : "Out of stock"}
+                          </span>
+                        </Tooltip>
                       </td>
                       <td className="p-4 pr-6 text-right">
                         <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedProduct(p);
-                              setEditForm({
-                                designName: p.design_name,
-                                category: p.category,
-                                fabric: p.fabric,
-                                colorOptions: p.color_options,
-                                sizeSet: p.size_set,
-                                lengthCm: String(p.length_cm || ""),
-                                purchaseCost: String(p.purchase_cost),
-                                freightPerPiece: String(p.freight_per_piece),
-                                overheadPerPiece: String(p.overhead_per_piece),
-                                standardPrice: String(p.standard_price),
-                                qtyAvailable: String(p.qty_available),
-                                grade: p.grade,
-                                status: p.status,
-                                videoUrl: p.video_url || "",
-                                notes: p.notes || ""
-                              });
-                              setEditPhotos(p.photo_urls ? JSON.parse(p.photo_urls) : []);
-                              setIsEditOpen(true);
-                            }}
-                            className="py-1.5 px-3 rounded-lg bg-slate-950 border border-white/5 hover:border-gold/30 hover:bg-slate-900 text-gold transition-all font-bold text-xs flex items-center gap-1.5"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" /> Edit
-                          </button>
+                          <Tooltip content="View and modify comprehensive SKU properties, fabric composition, purchase costs, and photos." position="left">
+                            <button
+                              onClick={() => {
+                                setSelectedProduct(p);
+                                setEditForm({
+                                  designName: p.design_name,
+                                  category: p.category,
+                                  fabric: p.fabric,
+                                  colorOptions: p.color_options,
+                                  sizeSet: p.size_set,
+                                  lengthCm: String(p.length_cm || ""),
+                                  purchaseCost: String(p.purchase_cost),
+                                  freightPerPiece: String(p.freight_per_piece),
+                                  overheadPerPiece: String(p.overhead_per_piece),
+                                  standardPrice: String(p.standard_price),
+                                  qtyAvailable: String(p.qty_available),
+                                  grade: p.grade,
+                                  status: p.status,
+                                  videoUrl: p.video_url || "",
+                                  notes: p.notes || ""
+                                });
+                                setEditPhotos(p.photo_urls ? JSON.parse(p.photo_urls) : []);
+                                setIsEditOpen(true);
+                              }}
+                              className="py-1.5 px-3 rounded-lg bg-slate-950 border border-white/5 hover:border-gold/30 hover:bg-slate-900 text-gold transition-all font-bold text-xs flex items-center gap-1.5"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" /> Edit
+                            </button>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>

@@ -30,7 +30,21 @@ export function middleware(request: NextRequest) {
       console.log('Payload role:', payload.role);
 
       // Check if user is staff (Role is not BUYER)
-      const staffRoles = ["ADMIN", "FOUNDER", "SALES", "INVENTORY", "ACCOUNTS", "CONTENT", "FIELD_BOY"];
+      const staffRoles = [
+        "ADMIN",
+        "FOUNDER",
+        "PURCHASE",
+        "INVENTORY",
+        "PRICING",
+        "CONTENT",
+        "MARKETING",
+        "BUYER_HUNTING",
+        "SALES",
+        "LOGISTICS",
+        "ACCOUNTS",
+        "TECHNICAL",
+        "FIELD_BOY"
+      ];
       if (!staffRoles.includes(payload.role)) {
         // Logged in but not staff -> redirect to buyer catalog
         return NextResponse.redirect(new URL("/catalog", request.url));
@@ -38,48 +52,41 @@ export function middleware(request: NextRequest) {
 
       const role = payload.role;
 
-      // 1. SALES: Allowed orders, buyers, and leads
-      if (role === "SALES") {
-        const allowedSales = ["/admin/orders", "/admin/buyers", "/admin/leads"];
-        const isAllowed = allowedSales.some(path => pathname.startsWith(path));
-        if (!isAllowed) {
-          return NextResponse.redirect(new URL("/admin/orders", request.url));
-        }
-      }
+      // Define allowed sub-paths for each operational role
+      const roleAllowedPaths: Record<string, string[]> = {
+        PURCHASE: ["/admin/stock", "/admin/orders"],
+        INVENTORY: ["/admin/stock", "/admin/orders"],
+        PRICING: ["/admin/stock"], // Allowed stock + overview (exact /admin)
+        CONTENT: ["/admin/stock", "/admin/whatsapp"],
+        MARKETING: ["/admin/leads", "/admin/whatsapp", "/admin/buyers"],
+        BUYER_HUNTING: ["/admin/leads", "/admin/whatsapp"],
+        SALES: ["/admin/orders", "/admin/buyers", "/admin/leads", "/admin/whatsapp"],
+        LOGISTICS: ["/admin/orders", "/admin/stock"],
+        ACCOUNTS: ["/admin/cashflow", "/admin/orders"],
+        TECHNICAL: ["/admin/whatsapp", "/admin/stock"],
+        FIELD_BOY: ["/admin/orders"]
+      };
 
-      // 2. ACCOUNTS: Allowed cashflow (ledger) and orders
-      if (role === "ACCOUNTS") {
-        const allowedAccounts = ["/admin/cashflow", "/admin/orders"];
-        const isAllowed = allowedAccounts.some(path => pathname.startsWith(path));
-        if (!isAllowed) {
-          return NextResponse.redirect(new URL("/admin/cashflow", request.url));
+      // FOUNDER and ADMIN have unrestricted full access
+      if (role !== "FOUNDER" && role !== "ADMIN") {
+        const allowedRoutes = roleAllowedPaths[role] || [];
+        
+        // Exact '/admin' overview check: only allowed if pricing or technical or admin
+        const isOverviewAllowed = role === "PRICING" || role === "TECHNICAL";
+        
+        if (pathname === "/admin" && !isOverviewAllowed) {
+          // Redirect to their first allowed dashboard tab
+          const fallback = allowedRoutes[0] || "/catalog";
+          return NextResponse.redirect(new URL(fallback, request.url));
         }
-      }
 
-      // 3. INVENTORY & CONTENT: Allowed stock management
-      if (role === "INVENTORY" || role === "CONTENT") {
-        const allowedStock = ["/admin/stock"];
-        const isAllowed = allowedStock.some(path => pathname.startsWith(path));
-        if (!isAllowed) {
-          return NextResponse.redirect(new URL("/admin/stock", request.url));
+        if (pathname.startsWith("/admin") && pathname !== "/admin") {
+          const isAllowed = allowedRoutes.some(route => pathname.startsWith(route));
+          if (!isAllowed) {
+            const fallback = allowedRoutes[0] || "/catalog";
+            return NextResponse.redirect(new URL(fallback, request.url));
+          }
         }
-      }
-
-      // 4. FIELD_BOY: Allowed field-boy mobile portal
-      if (role === "FIELD_BOY") {
-        const allowedField = ["/admin/field-boy"];
-        const isAllowed = allowedField.some(path => pathname.startsWith(path));
-        if (!isAllowed) {
-          return NextResponse.redirect(new URL("/admin/field-boy", request.url));
-        }
-      }
-
-      // 5. Default redirect at /admin exactly
-      if (pathname === "/admin") {
-        if (role === "SALES") return NextResponse.redirect(new URL("/admin/orders", request.url));
-        if (role === "ACCOUNTS") return NextResponse.redirect(new URL("/admin/cashflow", request.url));
-        if (role === "INVENTORY" || role === "CONTENT") return NextResponse.redirect(new URL("/admin/stock", request.url));
-        if (role === "FIELD_BOY") return NextResponse.redirect(new URL("/admin/field-boy", request.url));
       }
     } catch (e) {
       // Decoding failed or token corrupt -> clear and redirect
