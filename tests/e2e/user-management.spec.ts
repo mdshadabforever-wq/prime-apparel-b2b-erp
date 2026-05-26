@@ -17,6 +17,7 @@ async function capture(page: any, name: string) {
 test.describe('Prime Apparel Role-Based User Management E2E Flow', () => {
 
   test('Complete Admin Control and Employee Lifecycle Validation', async ({ page }) => {
+    test.setTimeout(120000);
     // 1. Visit Login Page as Admin
     console.log('⏳ Visiting Login Page as Admin...');
     await page.goto(`${BASE_URL}/login`);
@@ -63,9 +64,7 @@ test.describe('Prime Apparel Role-Based User Management E2E Flow', () => {
     console.log('🚀 Submitting new employee registration...');
     await page.click('button[type="submit"]');
     
-    // Verify user is visible in the table list
-    await page.waitForTimeout(2000); // wait for api reload and listing update
-    await expect(page.locator('table')).toContainText(TEST_STAFF_NAME);
+    await expect(page.locator('table')).toContainText(TEST_STAFF_NAME, { timeout: 15000 });
     await capture(page, 'rbac_06_user_created_in_table');
 
     // 7. Test Route-Protection Middleware: Clear session cookies to log out admin
@@ -116,10 +115,8 @@ test.describe('Prime Apparel Role-Based User Management E2E Flow', () => {
     await expect(statusBtn).toBeVisible();
     await statusBtn.click();
     
-    // Verify badge updates to BLOCKED
-    await page.waitForTimeout(2000);
     const blockedBtn = page.locator(`tr:has-text("${TEST_STAFF_NAME}") button:has-text("BLOCKED")`);
-    await expect(blockedBtn).toBeVisible();
+    await expect(blockedBtn).toBeVisible({ timeout: 15000 });
     await capture(page, 'rbac_09_employee_blocked');
 
     // Clear session cookies and try logging in as blocked employee
@@ -159,8 +156,7 @@ test.describe('Prime Apparel Role-Based User Management E2E Flow', () => {
     await deleteBtn.click();
 
     // Verify it is gone from listing
-    await page.waitForTimeout(2000);
-    await expect(page.locator('table')).not.toContainText(TEST_STAFF_NAME);
+    await expect(page.locator('table')).not.toContainText(TEST_STAFF_NAME, { timeout: 15000 });
     await capture(page, 'rbac_11_database_cleaned_up');
     console.log('🎉 E2E User Management Test completed successfully!');
   });

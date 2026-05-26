@@ -1,1 +1,15 @@
-{}
+{
+  "/login/page": "app/login/page.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/api/admin/users/route": "app/api/admin/users/route.js",
+  "/api/orders/route": "app/api/orders/route.js",
+  "/api/buyers/route": "app/api/buyers/route.js",
+  "/api/products/route": "app/api/products/route.js",
+  "/api/admin/users/[id]/route": "app/api/admin/users/[id]/route.js",
+  "/api/crm/customers/[id]/route": "app/api/crm/customers/[id]/route.js",
+  "/admin/page": "app/admin/page.js",
+  "/admin/users/page": "app/admin/users/page.js",
+  "/admin/buyers/page": "app/admin/buyers/page.js",
+  "/admin/orders/page": "app/admin/orders/page.js",
+  "/admin/buyers/[id]/page": "app/admin/buyers/[id]/page.js"
+}

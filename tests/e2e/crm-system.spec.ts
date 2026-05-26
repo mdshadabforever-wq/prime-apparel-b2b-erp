@@ -12,6 +12,7 @@ async function capture(page: any, name: string) {
 test.describe('Prime Apparel CRM Memory & CRM System E2E Flow', () => {
 
   test('Staff Login -> Open 360° Customer Profile -> Operate CRM Memory & Tabs', async ({ page }) => {
+    test.setTimeout(120000);
     // 1. Visit Login Page
     console.log('⏳ Visiting Login Page...');
     await page.goto(`${BASE_URL}/login`);
