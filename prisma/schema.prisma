@@ -44,6 +44,7 @@ model Buyer {
   referred_by        String?
   sales_orders       SalesOrder[]
   whatsapp_logs      WhatsAppLog[]
+  customer           Customer?
 }
 
 model Product {
@@ -196,6 +197,96 @@ model Staff {
   role          String   @default("SALES") // ADMIN, FOUNDER, SALES, INVENTORY, ACCOUNTS, CONTENT
   permissions   String   // Comma-separated permissions list
   status        String   @default("active") // active, inactive
+
+  // Extended relations for RBAC
+  department_id     Int?
+  department        Department?     @relation(fields: [department_id], references: [id])
+  user              User?
+  roles             StaffRole[]
+  login_activities  LoginActivity[]
+  sessions          UserSession[]
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  name          String
+  password_hash String
+  role          String
+  status        String   @default("active")
+  created_at    DateTime @default(now())
+  
+  staff_id      Int?     @unique
+  staff         Staff?   @relation(fields: [staff_id], references: [staff_id], onDelete: Cascade)
+}
+
+model Department {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  code        String   @unique // e.g. "PURCHASE", "INVENTORY", "ACCOUNTS", etc.
+  description String?
+  staff       Staff[]
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  code        String   @unique // e.g. "SALES_TEAM", "ACCOUNTS_TEAM", "TECHNICAL_TEAM"
+  description String?
+  permissions RolePermission[]
+  staff       StaffRole[]
+}
+
+model Permission {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  code        String   @unique // e.g. "VIEW_BUYERS", "WRITE_STOCK", "DELETE_USER"
+  description String?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  role_id       Int
+  permission_id Int
+  role          Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission    Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+}
+
+model StaffRole {
+  staff_id Int
+  role_id  Int
+  staff    Staff @relation(fields: [staff_id], references: [staff_id], onDelete: Cascade)
+  role     Role  @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@id([staff_id, role_id])
+}
+
+model LoginActivity {
+  id             Int      @id @default(autoincrement())
+  timestamp      DateTime @default(now())
+  mobile         String?  // The mobile/email they attempted to log in with
+  staff_id       Int?     // If they matched a staff
+  ip_address     String?
+  user_agent     String?
+  status         String   // SUCCESS, FAILED
+  failure_reason String?
+  
+  staff          Staff?   @relation(fields: [staff_id], references: [staff_id], onDelete: Cascade)
+}
+
+model UserSession {
+  id         Int      @id @default(autoincrement())
+  session_id String   @unique
+  staff_id   Int
+  created_at DateTime @default(now())
+  expires_at DateTime
+  is_active  Boolean  @default(true)
+  ip_address String?
+  user_agent String?
+  
+  staff      Staff    @relation(fields: [staff_id], references: [staff_id], onDelete: Cascade)
 }
 
 model WhatsAppLog {
@@ -231,4 +322,182 @@ model AuditLog {
   action      String
   description String
   linked_id   String?
+}
+
+model Customer {
+  id                 Int                @id @default(autoincrement())
+  buyer_id           Int?               @unique
+  buyer              Buyer?             @relation(fields: [buyer_id], references: [buyer_id])
+  company_name       String
+  trade_name         String
+  gstin              String?
+  mobile             String
+  whatsapp_number    String?
+  email              String?
+  address            String?
+  city               String
+  state              String
+  assigned_salesperson String?
+  
+  // Live Customer Stats
+  total_orders       Int                @default(0)
+  total_revenue      Float              @default(0)
+  pending_payments   Float              @default(0)
+  last_order_date    DateTime?
+  average_order_value Float             @default(0)
+  repeat_frequency   String?
+  risk_level         String             @default("LOW") // LOW, MEDIUM, HIGH
+  lead_stage         String             @default("COLD") // COLD, WARM, HOT
+  
+  conversations      Conversation[]
+  followups          FollowUp[]
+  notes              CustomerNote[]
+  tags               CustomerTag[]
+  timeline           CustomerTimeline[]
+  ai_insights        CustomerAIInsight[]
+  attachments        CustomerAttachment[]
+  reminders          CustomerReminder[]
+  payments           PaymentHistory[]
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+
+  @@index([mobile])
+  @@index([gstin])
+}
+
+model Conversation {
+  conversation_id    Int                @id @default(autoincrement())
+  customer_id        Int
+  customer           Customer           @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  channel            String             @default("WHATSAPP") // WHATSAPP, NOTE, EMAIL, SYSTEM
+  title              String?
+  last_message_at    DateTime           @default(now())
+  messages           Message[]
+  created_at         DateTime           @default(now())
+
+  @@index([customer_id])
+}
+
+model Message {
+  message_id         Int                @id @default(autoincrement())
+  conversation_id    Int
+  conversation       Conversation       @relation(fields: [conversation_id], references: [conversation_id], onDelete: Cascade)
+  sender             String             // system, customer, agent, salesperson_name
+  content            String
+  direction          String             @default("incoming") // incoming, outgoing
+  message_type       String             @default("text") // text, image, document, voice
+  status             String             @default("sent") // sent, delivered, read, failed
+  timestamp          DateTime           @default(now())
+  media_url          String?
+
+  @@index([conversation_id])
+}
+
+model FollowUp {
+  followup_id        Int                @id @default(autoincrement())
+  customer_id        Int
+  customer           Customer           @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  task_description   String
+  scheduled_date     DateTime
+  status             String             @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  assigned_to        String?
+  created_at         DateTime           @default(now())
+  completed_at       DateTime?
+
+  @@index([customer_id])
+}
+
+model CustomerNote {
+  note_id            Int                @id @default(autoincrement())
+  customer_id        Int
+  customer           Customer           @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  content            String
+  is_pinned          Boolean            @default(false)
+  created_by         String             // staff member name
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+
+  @@index([customer_id])
+}
+
+model CustomerTag {
+  tag_id             Int                @id @default(autoincrement())
+  customer_id        Int
+  customer           Customer           @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  label              String             // e.g. "VIP", "Surat Wholesaler"
+  created_at         DateTime           @default(now())
+
+  @@index([customer_id])
+}
+
+model CustomerTimeline {
+  timeline_id        Int                @id @default(autoincrement())
+  customer_id        Int
+  customer           Customer           @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  event_type         String             // GST_VERIFIED, QUOTATION_SENT, FOLLOW_UP, PAYMENT_RECEIVED, DISPATCH_COMPLETED, WHATSAPP_RECEIVED, INVOICE_GENERATED, COMPLAINT_RAISED, SYSTEM_ALERT
+  title              String
+  description        String
+  timestamp          DateTime           @default(now())
+  operator_name      String?
+  reference_id       String?            // order_id, invoice_id, etc.
+
+  @@index([customer_id])
+}
+
+model CustomerAIInsight {
+  insight_id         Int                @id @default(autoincrement())
+  customer_id        Int
+  customer           Customer           @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  summary            String             // Auto-generated conversation summary
+  buyer_behavior     String?            // repeat-product preference, active hours
+  repeat_products    String?            // JSON string array of SKU preferences
+  followup_suggestion String?           // Next recommended follow-up action
+  priority_score     Int                @default(0) // 0-100 score
+  risk_detection     String?            // potential churn risk alert
+  payment_delay_est  String?            // e.g. "Likely delay by 5 days"
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+
+  @@index([customer_id])
+}
+
+model CustomerAttachment {
+  attachment_id      Int                @id @default(autoincrement())
+  customer_id        Int
+  customer           Customer           @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  file_name          String
+  file_type          String             // image, document, voice
+  file_url           String
+  created_by         String
+  created_at         DateTime           @default(now())
+
+  @@index([customer_id])
+}
+
+model CustomerReminder {
+  reminder_id        Int                @id @default(autoincrement())
+  customer_id        Int
+  customer           Customer           @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  reminder_text      String
+  remind_at          DateTime
+  status             String             @default("PENDING") // PENDING, FIRED, DISMISSED
+  created_at         DateTime           @default(now())
+
+  @@index([customer_id])
+}
+
+model PaymentHistory {
+  payment_id         Int                @id @default(autoincrement())
+  customer_id        Int
+  customer           Customer           @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  amount             Float
+  payment_date       DateTime           @default(now())
+  payment_method     String             // BANK_TRANSFER, CHEQUE, CASH, UPI
+  transaction_ref    String?
+  invoice_id         String?
+  status             String             @default("COMPLETED") // COMPLETED, PENDING, FAILED
+  notes              String?
+  created_by         String
+
+  @@index([customer_id])
 }

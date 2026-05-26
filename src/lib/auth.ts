@@ -1,7 +1,10 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
-const JWT_SECRET = process.env.JWT_SECRET || "prime-apparel-secret-key-123456";
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET not set");
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export interface TokenPayload {
   userId: number;

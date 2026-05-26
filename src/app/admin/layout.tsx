@@ -44,7 +44,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Stock & SKU", path: "/admin/stock", icon: <Package className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN", "PURCHASE", "INVENTORY", "PRICING", "CONTENT", "LOGISTICS", "TECHNICAL"], shortcut: "⌥P", tooltip: "Procure fabrics, enter warehouse inventory, and review B2B pricing." },
     { name: "Leads Board", path: "/admin/leads", icon: <Layers className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN", "MARKETING", "BUYER_HUNTING", "SALES"], shortcut: "⌥L", tooltip: "CRM pipeline for Cold to Hot leads acquisition campaigns." },
     { name: "Cash Ledger", path: "/admin/cashflow", icon: <CircleDollarSign className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN", "ACCOUNTS"], shortcut: "⌥C", tooltip: "Income, supplier payouts, and daily operational ledger entries." },
-    { name: "WhatsApp Sandbox", path: "/admin/whatsapp", icon: <MessageSquare className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN", "CONTENT", "MARKETING", "BUYER_HUNTING", "SALES", "TECHNICAL"], shortcut: "⌥W", tooltip: "Cloud API automation sandbox chatbot simulators." }
+    { name: "WhatsApp Sandbox", path: "/admin/whatsapp", icon: <MessageSquare className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN", "CONTENT", "MARKETING", "BUYER_HUNTING", "SALES", "TECHNICAL"], shortcut: "⌥W", tooltip: "Cloud API automation sandbox chatbot simulators." },
+    { name: "Users & RBAC", path: "/admin/users", icon: <Users className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN"], shortcut: "⌥U", tooltip: "Manage department login accounts, permissions, and audit logs." }
   ];
 
   // Keyboard shortcut listener

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { GstVerificationModal } from "@/components/ui/GstVerificationModal";
 import {
   Users,
   Search,
@@ -18,6 +20,7 @@ import {
 } from "lucide-react";
 
 export default function AdminBuyersPage() {
+  const router = useRouter();
   const [buyers, setBuyers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -26,6 +29,14 @@ export default function AdminBuyersPage() {
 
   // Selection states
   const [selectedBuyer, setSelectedBuyer] = useState<any | null>(null);
+  // GST verification states
+  const [gstEnabled, setGstEnabled] = useState(false);
+  const [gstNumber, setGstNumber] = useState("");
+  const [gstLoading, setGstLoading] = useState(false);
+  const [captchaImage, setCaptchaImage] = useState<string | undefined>(undefined);
+  const [gstError, setGstError] = useState<string | undefined>(undefined);
+  const [gstVerifiedData, setGstVerifiedData] = useState<any>(null);
+  const [gstModalOpen, setGstModalOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<"profile" | "credit" | "status" | null>(null);
 
   // Form states
@@ -33,13 +44,18 @@ export default function AdminBuyersPage() {
   const [statusForm, setStatusForm] = useState({ status: "APPROVED", note: "" });
 
   useEffect(() => {
-    fetchBuyers();
-  }, []);
+    const delayDebounceFn = setTimeout(() => {
+      fetchBuyers(search);
+    }, 300);
 
-  const fetchBuyers = async () => {
+    return () => clearTimeout(delayDebounceFn);
+  }, [search]);
+
+  const fetchBuyers = async (query = "") => {
     setLoading(true);
     try {
-      const res = await fetch("/api/buyers");
+      const url = query ? `/api/buyers?q=${encodeURIComponent(query)}` : "/api/buyers";
+      const res = await fetch(url);
       const data = await res.json();
       setBuyers(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -103,10 +119,8 @@ export default function AdminBuyersPage() {
   };
 
   const filteredBuyers = buyers.filter((b) => {
-    const matchesSearch =
-      b.business_name.toLowerCase().includes(search.toLowerCase()) ||
-      b.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      b.city.toLowerCase().includes(search.toLowerCase());
+    // Backend search has already matched the results comprehensively; keep matches true
+    const matchesSearch = true;
 
     const matchesStatus = statusFilter === "all" || b.account_status === statusFilter;
     const matchesLead = leadFilter === "all" || b.lead_status === leadFilter;
@@ -125,6 +139,83 @@ export default function AdminBuyersPage() {
         </p>
       </div>
 
+        {/* GST Verification Toggle */}
+        <div className="flex items-center gap-4 mb-4">
+          <label className="flex items-center gap-2 text-sm text-gold">
+            <input type="checkbox" data-test-id="gst-toggle" checked={gstEnabled} onChange={(e) => setGstEnabled(e.target.checked)} className="form-checkbox h-4 w-4 text-gold bg-navy border-gold" />
+            Registered GST Customer
+          </label>
+          {gstEnabled && (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                name="gstin"
+                maxLength={15}
+                value={gstNumber}
+                onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
+                placeholder="GSTIN (15 characters)"
+                className="px-3 py-1 rounded bg-navy border border-gold text-gold placeholder-gold/60 focus:outline-none focus:ring-1 focus:ring-gold"
+              />
+              <button data-test-id="verify-gst-button"
+                onClick={async () => {
+                  if (!gstNumber) { setGstError("Enter GSTIN first"); return; }
+                  setGstLoading(true); setGstError(undefined);
+                  try {
+                    const res = await fetch('/api/gst/verify', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ gstin: gstNumber })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Verification failed');
+                    if (data.captchaImage) { setCaptchaImage(data.captchaImage); setGstModalOpen(true); }
+                    else { setGstVerifiedData(data); }
+                  } catch (e: any) { setGstError(e.message); }
+                  finally { setGstLoading(false); }
+                }}
+                disabled={gstLoading}
+                className="px-3 py-1 rounded bg-gold text-navy font-medium hover:bg-gold/80 transition"
+              >
+                {gstLoading ? 'Verifying...' : 'Verify GST'}
+              </button>
+            </div>
+          )}
+          {gstError && <span className="text-xs text-red-400">{gstError}</span>}
+          {gstVerifiedData && (
+            <div className="mt-4 space-y-2" data-test-id="gst-autofill-fields">
+              <input type="text" name="legalName" data-test-id="buyer-legal-name" value={gstVerifiedData.legalName || ''} readOnly className="hidden" />
+              <input type="text" name="tradeName" data-test-id="buyer-trade-name" value={gstVerifiedData.tradeName || ''} readOnly className="hidden" />
+              <input type="text" name="gstStatus" data-test-id="buyer-gst-status" value={gstVerifiedData.status || ''} readOnly className="hidden" />
+              <input type="text" name="address" data-test-id="buyer-address" value={gstVerifiedData.address || ''} readOnly className="hidden" />
+              <input type="text" name="stateCode" data-test-id="buyer-state-code" value={gstVerifiedData.stateCode || ''} readOnly className="hidden" />
+            </div>
+          )}
+        </div>
+        {gstModalOpen && (
+          <GstVerificationModal
+            open={gstModalOpen}
+            onClose={() => setGstModalOpen(false)}
+            captchaImage={captchaImage}
+            loading={gstLoading}
+            error={gstError}
+            onSubmitCaptcha={async (captcha) => {
+              setGstLoading(true);
+              try {
+                const res = await fetch('/api/gst/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ gstin: gstNumber, captcha })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Verification failed');
+                setGstVerifiedData(data);
+                setGstModalOpen(false);
+                setCaptchaImage(undefined);
+              } catch (e: any) { setGstError(e.message); }
+              finally { setGstLoading(false); }
+            }}
+          />
+        )}
       {/* FILTER BAR */}
       <div className="glass-panel p-4 rounded-xl border border-white/5 flex flex-col md:flex-row gap-4 items-center">
         {/* Search */}
@@ -224,8 +315,8 @@ export default function AdminBuyersPage() {
                     <td className="p-4 font-black text-white font-sans">₹{b.total_orders_value.toLocaleString()} <span className="text-[9px] text-slate-500 font-semibold">({b.total_orders_count} POs)</span></td>
                     <td className="p-4 text-right flex justify-end gap-2">
                       <button
-                        onClick={() => { setSelectedBuyer(b); setActiveModal("profile"); }}
-                        className="py-1 px-2.5 rounded bg-slate-900 border border-slate-800 hover:text-white transition-colors"
+                        onClick={() => router.push(`/admin/buyers/${b.buyer_id}`)}
+                        className="py-1 px-2.5 rounded bg-slate-900 border border-slate-800 text-gold hover:border-gold/30 hover:text-white transition-colors font-bold flex items-center gap-1"
                         title="View Full Profile"
                       >
                         <FileText className="w-3.5 h-3.5 text-slate-400" />

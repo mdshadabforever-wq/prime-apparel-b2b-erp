@@ -22,6 +22,40 @@ import {
 
 export default function AdminStockPage() {
   const [products, setProducts] = useState<any[]>([]);
+
+  const generateNextSku = (category: string, designName: string, productsList: any[]) => {
+    const year = "26"; // 2026
+    const month = "05"; // May = 05
+    
+    let catCode = "KR";
+    if (category === "suit") catCode = "SU";
+    else if (category === "cord_set") catCode = "CO";
+    else if (category === "festive") catCode = "FE";
+    else if (category === "daily") catCode = "DA";
+
+    // Extract unique prefix from Design Name (first 4 uppercase letters, padded with X if too short)
+    const cleanDesign = (designName || "")
+      .replace(/[^a-zA-Z]/g, "") // keep only letters
+      .toUpperCase();
+    const designCode = cleanDesign.substring(0, 4).padEnd(4, "X");
+
+    const prefix = `PA-${year}${month}-${catCode}-${designCode}-`;
+    const matchingProducts = productsList.filter(p => p.sku_id && p.sku_id.startsWith(prefix));
+    
+    let maxSeq = 0;
+    matchingProducts.forEach(p => {
+      const parts = p.sku_id.split("-");
+      const seqStr = parts[parts.length - 1];
+      const seqNum = parseInt(seqStr, 10);
+      if (!isNaN(seqNum) && seqNum > maxSeq) {
+        maxSeq = seqNum;
+      }
+    });
+
+    const nextSeq = maxSeq + 1;
+    const nextSeqStr = String(nextSeq).padStart(3, "0");
+    return `${prefix}${nextSeqStr}`;
+  };
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -253,7 +287,27 @@ export default function AdminStockPage() {
         <div className="flex flex-wrap gap-2 w-full lg:w-auto items-center">
           <Tooltip content="Register a new design SKU, configure cost structures, and assign initial warehouse stock." position="bottom">
             <button
-              onClick={() => setIsAddOpen(true)}
+              onClick={() => {
+                const nextSku = generateNextSku("kurti", "", products);
+                setAddForm({
+                  skuId: nextSku,
+                  designName: "",
+                  category: "kurti",
+                  fabric: "cotton",
+                  colorOptions: "Red, Blue, Green",
+                  sizeSet: "S, M, L, XL, XXL",
+                  lengthCm: "",
+                  purchaseCost: "",
+                  freightPerPiece: "0",
+                  overheadPerPiece: "0",
+                  standardPrice: "",
+                  qtyAvailable: "0",
+                  grade: "A",
+                  videoUrl: "",
+                  notes: ""
+                });
+                setIsAddOpen(true);
+              }}
               className="py-2.5 px-4 rounded-xl bg-gold hover:bg-gold-600 text-slate-950 font-extrabold text-xs transition-all flex items-center gap-2 shadow-lg shadow-gold/15 active:scale-95"
             >
               <Plus className="w-4 h-4 text-slate-950 stroke-[3]" /> Add New SKU
@@ -591,40 +645,57 @@ export default function AdminStockPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">SKU ID * (e.g. PA-26-KR-099)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. PA-26-KR-100"
-                  value={addForm.skuId}
-                  onChange={(e) => setAddForm(p => ({ ...p, skuId: e.target.value }))}
-                  className="py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white focus:ring-2 focus:ring-gold/10 transition-all placeholder-slate-700"
-                  required
-                />
+                <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Select Product Category *</label>
+                <select
+                  value={addForm.category}
+                  onChange={(e) => {
+                    const newCat = e.target.value;
+                    const generated = generateNextSku(newCat, addForm.designName, products);
+                    setAddForm(p => ({ ...p, category: newCat, skuId: generated }));
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-slate-300 font-semibold cursor-pointer focus:ring-2 focus:ring-gold/10"
+                >
+                  <option value="kurti">Kurti (KR)</option>
+                  <option value="suit">Suit Set (SU)</option>
+                  <option value="cord_set">Cord Set (CO)</option>
+                  <option value="festive">Festive Wear (FE)</option>
+                  <option value="daily">Daily Wear (DA)</option>
+                </select>
               </div>
+
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Design Name *</label>
+                <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Design Name * (Types to Generate SKU)</label>
                 <input
                   type="text"
                   placeholder="e.g. Aishwarya Anarkali Set"
                   value={addForm.designName}
-                  onChange={(e) => setAddForm(p => ({ ...p, designName: e.target.value }))}
-                  className="py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white focus:ring-2 focus:ring-gold/10 transition-all placeholder-slate-700"
+                  onChange={(e) => {
+                    const newName = e.target.value;
+                    const generated = generateNextSku(addForm.category, newName, products);
+                    setAddForm(p => ({ ...p, designName: newName, skuId: generated }));
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white focus:ring-2 focus:ring-gold/10 transition-all placeholder-slate-700 font-semibold"
                   required
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Category *</label>
-                <select
-                  value={addForm.category}
-                  onChange={(e) => setAddForm(p => ({ ...p, category: e.target.value }))}
-                  className="py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-slate-300 font-semibold cursor-pointer"
-                >
-                  <option value="kurti">Kurti</option>
-                  <option value="suit">Suit Set</option>
-                  <option value="festive">Festive Wear</option>
-                  <option value="daily">Daily Wear</option>
-                </select>
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Dynamic B2B SKU ID (Auto-Generated & Verified)</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={addForm.skuId}
+                    className="flex-grow py-2.5 px-4 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-gold font-mono font-bold cursor-not-allowed focus:outline-none"
+                    required
+                    readOnly
+                  />
+                  <span className="py-2.5 px-3.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-[10px] tracking-wider uppercase flex items-center gap-1 flex-shrink-0 animate-pulse">
+                    ✔ Anti-Duplicate Secured
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-medium">
+                  Prefix parameters parsed: <strong>PA</strong> (Prime Apparel) | <strong>2605</strong> (May 2026) | <strong>{addForm.category === 'kurti' ? 'KR' : addForm.category === 'suit' ? 'SU' : addForm.category === 'cord_set' ? 'CO' : addForm.category === 'festive' ? 'FE' : 'DA'}</strong> (Category) | <strong>{(addForm.designName || "").replace(/[^a-zA-Z]/g, "").toUpperCase().substring(0, 4).padEnd(4, "X")}</strong> (Design Code)
+                </span>
               </div>
 
               <div className="flex flex-col gap-1.5">

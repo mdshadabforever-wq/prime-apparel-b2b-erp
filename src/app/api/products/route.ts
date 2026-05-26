@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getAuthTokenFromHeader, verifyToken } from "@/lib/auth";
 
 // GET: Fetch all products from SQLite database
 export async function GET() {

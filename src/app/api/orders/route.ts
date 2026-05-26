@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { checkOrderFeasibility, reserveInventory } from "@/lib/inventory";
+import { getAuthTokenFromHeader, verifyToken } from "@/lib/auth";
 
 // GET: List all Sales Orders with Buyer relation details
-export async function GET() {
+export async function GET(request: Request) {
+  const tokenHeader = request.headers.get('cookie');
+  const authToken = getAuthTokenFromHeader(tokenHeader);
+  if (!authToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = verifyToken(authToken);
+  if (!user) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   try {
     const orders = await db.salesOrder.findMany({
       include: { buyer: true },
@@ -25,6 +31,11 @@ export async function GET() {
 
 // POST: Create manual Sales Order (from admin workspace)
 export async function POST(request: Request) {
+  const tokenHeader = request.headers.get('cookie');
+  const authToken = getAuthTokenFromHeader(tokenHeader);
+  if (!authToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = verifyToken(authToken);
+  if (!user) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   try {
     const { buyerId, items, paymentTerms, notes, createdBy, depositAmount } = await request.json();
 

@@ -16,6 +16,10 @@ export async function POST(request: Request) {
     // Standardize mobile formatting (remove leading +, spaces, etc. or match exactly)
     const cleanMobile = mobile.replace(/\D/g, "");
 
+    // Extract IP and User Agent
+    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "127.0.0.1";
+    const userAgent = request.headers.get("user-agent") || "unknown";
+
     // 1. Check in Staff table first
     const staff = await db.staff.findUnique({
       where: mobile.includes('@') ? { email: mobile } : { mobile: cleanMobile }
@@ -23,6 +27,16 @@ export async function POST(request: Request) {
 
     if (staff) {
       if (staff.status !== "active") {
+        await db.loginActivity.create({
+          data: {
+            mobile: mobile,
+            staff_id: staff.staff_id,
+            ip_address: ip,
+            user_agent: userAgent,
+            status: "FAILED",
+            failure_reason: "ACCOUNT_INACTIVE"
+          }
+        });
         return NextResponse.json(
           { error: "Aapka staff account inactive hai. Admin se baat karein." },
           { status: 403 }
@@ -31,6 +45,16 @@ export async function POST(request: Request) {
 
       const isValidPassword = await comparePassword(password, staff.password_hash);
       if (!isValidPassword) {
+        await db.loginActivity.create({
+          data: {
+            mobile: mobile,
+            staff_id: staff.staff_id,
+            ip_address: ip,
+            user_agent: userAgent,
+            status: "FAILED",
+            failure_reason: "WRONG_PASSWORD"
+          }
+        });
         return NextResponse.json(
           { error: "Mobile number ya password galat hai." },
           { status: 401 }
@@ -44,6 +68,29 @@ export async function POST(request: Request) {
         name: staff.name,
         role: staff.role,
         permissions: staff.permissions.split(",")
+      });
+
+      // Log success activity
+      await db.loginActivity.create({
+        data: {
+          mobile: mobile,
+          staff_id: staff.staff_id,
+          ip_address: ip,
+          user_agent: userAgent,
+          status: "SUCCESS"
+        }
+      });
+
+      // Create session
+      const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      await db.userSession.create({
+        data: {
+          session_id: sessionId,
+          staff_id: staff.staff_id,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          ip_address: ip,
+          user_agent: userAgent
+        }
       });
 
       // Set cookie and return success
@@ -129,6 +176,16 @@ export async function POST(request: Request) {
     }
 
     // If both checked and not found
+    await db.loginActivity.create({
+      data: {
+        mobile: mobile,
+        ip_address: ip,
+        user_agent: userAgent,
+        status: "FAILED",
+        failure_reason: "USER_NOT_FOUND"
+      }
+    });
+
     return NextResponse.json(
       { error: "Yeh mobile number system mein nahi mila. Pehle Register karein." },
       { status: 404 }
