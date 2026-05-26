@@ -1,375 +1,276 @@
-# 📦 Prime Apparel B2B ERP
+# Prime Apparel ERP
 
-![GitHub Repo Size](https://img.shields.io/github/repo-size/$(git remote get-url origin | %{$_ -replace '^.*github\.com[:/]', '' -replace '\.git$',''}))
-![License](https://img.shields.io/github/license/$(git remote get-url origin | %{$_ -replace '^.*github\.com[:/]', '' -replace '\.git$',''}))
-![Last Commit](https://img.shields.io/github/last-commit/$(git remote get-url origin | %{$_ -replace '^.*github\.com[:/]', '' -replace '\.git$',''}))
-![Node Version](https://img.shields.io/badge/node-20%20LTS-brightgreen)
-![Next.js](https://img.shields.io/badge/Next.js-14-000000)
+![Prime Apparel ERP Logo](https://raw.githubusercontent.com/mdshadabforever-wq/prime-apparel-b2b-erp/main/assets/logo.png)
 
 ---
 
-## ✨ Premium Project Introduction
-**Prime Apparel B2B ERP** is a world‑class, AI‑powered B2B commerce platform for premium fashion wholesalers. It delivers an **app‑like, mobile‑first experience** to buyers while providing a powerful admin suite for inventory, orders, finance, and lead management.
-
-The platform mirrors the polish of top‑tier SaaS products (Linear, Stripe, Apple) and the elegance of high‑end D2C fashion brands.
-
----
-
-## 🚀 Hero Title
 <div align="center">
-  <h1 style="font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 3rem; color: #d4af37;">India's Smartest Sourcing Hub</h1>
-  <p style="font-size: 1.25rem; color: #e5e7eb;">Premium Kurtis & Suit Sets – Direct from Surat Mills, Verified by Mumbai QC.</p>
+
+[![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D%2018.0.0-brightgreen)](https://nodejs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-13.5.0-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.10-purple)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791)](https://neon.tech/)
+[![Playwright](https://img.shields.io/badge/Playwright-1.38-orange)](https://playwright.dev/)
+
 </div>
 
 ---
 
-## 🌟 Features Overview
-| ✅ Feature | 📝 Description |
-|------------|----------------|
-| **Premium UI** | Glass‑morphism panels, subtle shadows, micro‑animations, skeleton loaders. |
-| **Mobile‑First Navigation** | Sticky bottom NavBar with `framer‑motion` slide‑up animation. |
-| **Product Catalog** | Responsive grid, lazy‑loaded high‑resolution images, infinite scroll/pagination. |
-| **Product Detail Modal** | Full‑screen slide‑up, image carousel, size/color selectors. |
-| **Enquiry Cart** | WhatsApp‑prefilled message, auto‑generated LR (Lorry Receipt) tracking. |
-| **Buyer Registration** | Multi‑step wizard, real‑time validation, lead scoring (0‑100). |
-| **Admin Dashboard** | KPI cards, recent activity feed, stock & order management. |
-| **WhatsApp Workflow** | One‑click enquiry → WhatsApp, automated receipt & status updates. |
-| **AI Browser Automation** | Puppeteer tests capture before/after screenshots, visual regression. |
-| **Scalable Architecture** | PostgreSQL, Vercel edge‑caching, Cloudinary CDN for media. |
+## 1️⃣ Project Introduction
+
+**Prime Apparel ERP** is a full‑stack, AI‑enhanced Enterprise Resource Planning system tailored for Indian B2B apparel manufacturers and distributors. It orchestrates the end‑to‑end workflow:
+
+1. **Sourcing & Procurement** – Manage buyers, suppliers, and purchase orders.
+2. **Inventory & Stock** – Real‑time stock levels, batch tracking, and QC.
+3. **Pricing & Invoicing** – Dynamic pricing engine, GST‑validated invoices.
+4. **Sales & Dispatch** – Order fulfillment, logistics, and delivery tracking.
+5. **Accounts & Finance** – Integrated ledger, GST compliance, and analytics.
+
+The platform unifies these silos under a single, intuitive dashboard, enabling founders & admins to operate **"sahi product lao, sahi rate pe lo, sahi price pe becho, aur right buyer tak sahi time pe pahunchao."**
 
 ---
 
-## 📸 Screenshots
-> *All screenshots are stored in `docs/screenshots/` and rendered below.*
+## 2️⃣ Core Business Philosophy
 
-| Home (Desktop) | Home (Mobile) |
-|---|---|
-| ![Home Desktop](docs/screenshots/home_desktop.png) | ![Home Mobile](docs/screenshots/home_mobile.png) |
-| **Catalog** | **Product Modal** |
-| ![Catalog Desktop](docs/screenshots/catalog_desktop.png) | ![Modal Mobile](docs/screenshots/modal_mobile.png) |
+> **"sahi product lao, sahi rate pe lo, sahi price pe becho, aur right buyer tak sahi time pe pahunchao."**
 
----
-
-## 🛠️ Tech Stack
-- **Framework:** Next.js 14 (App Router) – React 18, TypeScript
-- **Styling:** Tailwind CSS 3, custom design system (glass‑panel, animations)
-- **Animations:** framer‑motion
-- **Database:** Prisma ORM → SQLite (dev) → PostgreSQL (prod)
-- **Auth:** JWT (staff), session‑less buyer flow
-- **Automation:** Puppeteer (browser QA)
-- **CI/CD:** Vercel (or Docker + Kubernetes)
-- **Media CDN:** Cloudinary (future) / static `public/`
+The ERP embeds this mantra at every layer:
+- **Product Accuracy** – QC modules enforce quality flags before stock enters the system.
+- **Rate Optimization** – Pricing engine leverages historical data & AI suggestions.
+- **Sales Excellence** – CRM Memory Brain provides 360° customer insights for perfect matching.
+- **Timely Delivery** – Logistics engine auto‑schedules dispatches respecting buyer windows.
 
 ---
 
-## 📁 Folder Structure
-```
-prime-apparel-b2b-erp/
-│
-├─ src/
-│   ├─ app/                 # Next.js routes & layouts
-│   │   ├─ admin/           # Admin UI (orders, stock, buyers …)
-│   │   ├─ catalog/         # Buyer catalog page
-│   │   ├─ login/ register/ # Auth flows
-│   │   └─ page.tsx         # Home page (buyer facing)
-│   ├─ components/          # Re‑usable UI (NavBar, Card, Modal, …)
-│   └─ lib/                 # Prisma client, auth helpers
-│
-├─ public/                  # Static assets (logo, favicons)
-├─ tests/                    # Puppeteer test suite + screenshots
-├─ prisma/                   # Prisma schema & migrations
-├─ .gitignore
-├─ package.json
-├─ tailwind.config.js
-└─ README.md
-```
+## 3️⃣ System Features
+
+### 📦 ERP Core
+- Inventory tracking with batch & expiry.
+- Order management, multi‑warehouse support.
+- Dynamic pricing rules & discount structures.
+- Automated invoicing with GST validation.
+- Integrated logistics & shipment tracking.
+
+### 🧾 GST Compliance System
+- Real‑time GSTIN verification against the official portal.
+- CAPTCHA handling automation.
+- Auto‑fill of GST details on invoices.
+- Blocked invoice creation for inactive GST numbers.
+
+### 🧠 CRM Memory Brain
+- Customer intelligence dashboard (timeline, notes, payment history).
+- AI‑ready architecture for future recommendation engines.
+- Follow‑up & task automation.
+
+### 🔐 RBAC & Department Management
+- Department‑scoped logins (Purchase, QC, Pricing, Content, Marketing, Sales, Logistics, Accounts, Technical, Field Boy).
+- Granular permission matrix with overrides.
+- Audit logs for every admin action.
+- Session tracking & automatic revocation on block.
+
+### 🛡️ Security
+- JWT‑based authentication.
+- Middleware route protection per role.
+- Comprehensive audit logging.
+- Password hashing with `bcrypt`.
+
+### 🧪 Testing
+- Playwright E2E suite covering admin workflows, RBAC, GST verification, and CRM memory.
+- QA screenshots stored under `artifacts/qa/`.
+- Continuous integration ready (GitHub Actions).
 
 ---
 
-## 👤 Buyer Workflow
-1. **Landing** – Hero section with CTA **Register B2B Account**.
-2. **Registration Wizard** – Email → Business details → GST verification → Lead scoring.
-3. **Catalog Browsing** – Premium product cards, filter bar, infinite scroll.
-4. **Product Detail** – Modal with carousel, size/color picker, **Enquire** button.
-5. **Enquiry Cart** – Review selections, auto‑generate WhatsApp message with product SKUs, quantities, and a unique LR code.
-6. **WhatsApp Confirmation** – Sales team replies with payment terms; buyer receives invoice link.
-7. **Order Tracking** – Real‑time status updates via WhatsApp and dashboard KPI cards.
+## 4️⃣ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | **Next.js 13 (App Router)**, **React 18**, **TailwindCSS**, **Inter** fonts |
+| Language | **TypeScript** |
+| ORM / DB | **Prisma 5** ↔ **PostgreSQL (Neon)** |
+| Auth | **JWT**, **bcrypt** |
+| Testing | **Playwright**, **jest** |
+| CI/CD | **GitHub Actions**, **Vercel** |
+| Cloud Storage | **Cloudinary** (media assets) |
+| Messaging/AI | **OpenAI** integration (future) |
 
 ---
 
-## 🛠️ Admin Workflow
-1. **Login** – Staff JWT auth.
-2. **Dashboard Overview** – KPI cards (sales today, low stock, pending payments).
-3. **Stock Management** – View/adjust `qty_available`, `qty_reserved`, low‑stock alerts.
-4. **Orders** – Review enquiries, confirm dispatch, generate LR, update payment status.
-5. **Buyers & Leads** – View buyer profiles, lead scores, convert leads to verified buyers.
-6. **Cash‑Flow** – Invoice ledger, overdue collections, export reports.
+## 5️⃣ System Architecture
 
----
-
-## 📱 WhatsApp Workflow
-- **One‑click Enquire** builds a pre‑filled message:
-  ```
-  Hi Prime Apparel,
-  I’d like to order:
-  • SKU: PA‑25‑KR‑001 – Qty: 12 pcs
-  • SKU: PA‑25‑SS‑001 – Qty: 8 pcs
-  Please share LR and payment details.
-  ```
-- Sales team replies with **Lorry Receipt (LR) number** and a **payment link**.
-- Automated webhook (future) will update order status in the system.
-
----
-
-## 📦 Inventory Workflow
-- **Ingest** – New SKUs added via admin UI (CSV import option planned).
-- **Stock Allocation** – `available = total - low_stock - out_of_stock`.
-- **Low‑Stock Alerts** – Dashboard badge turns **amber** when < 10 pcs, **red** when 0.
-- **Reservation** – When a buyer adds a SKU to the cart, `qty_reserved` increments to prevent oversell.
-- **Reconciliation** – Daily batch job (cron) syncs `qty_available` with actual warehouse counts.
-
----
-
-## 🧾 Order Workflow
-| Step | Action |
-|------|--------|
-| 1️⃣  | Buyer creates enquiry (cart) → WhatsApp message |
-| 2️⃣  | Sales verifies stock, generates LR, sends payment link |
-| 3️⃣  | Buyer pays (offline or via integrated gateway – future) |
-| 4️⃣  | Staff marks order as **Dispatched** → updates `order_status` |
-| 5️⃣  | Real‑time LR tracking shared back to buyer via WhatsApp |
-| 6️⃣  | Order marked **Delivered** – invoice archived |
-
----
-
-## 🌐 API Overview
-*All routes are **force‑dynamic** to guarantee fresh data.*
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/auth/login` | Staff JWT authentication |
-| `POST` | `/api/auth/register` | Buyer registration wizard |
-| `GET`  | `/api/products` | Public catalog (filters, pagination) |
-| `GET`  | `/api/products/:sku` | Single product details |
-| `POST` | `/api/orders` | Create enquiry → WhatsApp workflow |
-| `GET`  | `/api/orders/:id` | Order status & LR info |
-| `PATCH`| `/api/stock/:sku` | Adjust reserved / available quantities |
-| `POST` | `/api/lead` | Submit lead data → scoring |
-
-Full OpenAPI spec lives in `API.md`.
-
----
-
-## 🗄️ Database Architecture
-The schema is defined in `prisma/schema.prisma`.
-
-```prisma
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  role      Role
-  password  String
-  createdAt DateTime @default(now())
-}
-
-enum Role { BUYER STAFF }
-
-model Buyer {
-  id          Int      @id @default(autoincrement())
-  businessName String
-  city        String
-  leadScore   Int      @default(0)
-  verified    Boolean  @default(false)
-  orders      Order[]
-}
-
-model Product {
-  sku_id          String   @id
-  design_name     String
-  fabric          String
-  price           Decimal
-  qty_available   Int
-  qty_reserved    Int
-  photo_urls      Json
-  status          String
-}
-
-model Order {
-  id            Int      @id @default(autoincrement())
-  buyerId       Int
-  buyer         Buyer    @relation(fields: [buyerId], references: [id])
-  items         OrderItem[]
-  payment_status String   @default("pending")
-  order_status   String   @default("confirmed")
-  created_at     DateTime @default(now())
-}
-
-model OrderItem {
-  id        Int   @id @default(autoincrement())
-  orderId   Int
-  productId String
-  qty       Int
-  price     Decimal
-}
+```mermaid
+flowchart TD
+    subgraph Frontend[Next.js Frontend]
+        UI[UI Components]
+        AuthGuard[Auth Guard]
+    end
+    subgraph Backend[API Layer]
+        A1[Auth API (/api/auth)]
+        A2[User Management (/api/admin/users)]
+        A3[CRM (/api/crm)]
+        A4[GST (/api/gst)]
+        A5[Orders (/api/orders)]
+    end
+    subgraph DB[PostgreSQL (Neon)]
+        Staff[Staff]
+        User[User]
+        Department[Department]
+        Role[Role]
+        Permission[Permission]
+        LoginActivity[LoginActivity]
+        UserSession[UserSession]
+        Customer[Customer]
+        Conversation[Conversation]
+        Message[Message]
+        GSTInfo[GSTInfo]
+    end
+    UI --> AuthGuard
+    AuthGuard --> A1
+    UI --> A2
+    UI --> A3
+    UI --> A4
+    UI --> A5
+    A1 --> Staff & User & LoginActivity & UserSession
+    A2 --> Staff & User & Department & Role & Permission
+    A3 --> Customer & Conversation & Message
+    A4 --> GSTInfo
+    A5 --> Staff & Customer
+    classDef cloud fill:#f0f9ff,stroke:#333,stroke-width:1px;
+    class Frontend,Backend,DB cloud;
 ```
 
 ---
 
-## ⚙️ Setup Instructions
+## 6️⃣ Database Overview
+
+| Model | Description | Key Relations |
+|-------|-------------|---------------|
+| **Staff** | Employee profile (name, contact, department). | `departmentId → Department`, `userId → User` |
+| **User** | Authentication credentials (email, password hash). | 1‑1 with **Staff** |
+| **Department** | Business unit (e.g., Sales, QC, Logistics). | has many **Staff** |
+| **Role** | Pre‑defined role presets per department. | many‑to‑many via **StaffRole** |
+| **Permission** | Atomic action (e.g., `view_buyers`). | many‑to‑many via **RolePermission** |
+| **LoginActivity** | Historical login attempts with IP/UA. | belongs to **User** |
+| **UserSession** | Active JWT session records. | belongs to **User** |
+| **Customer** | B2B buyer information, GST details. | has many **Conversation**, **Order** |
+| **Conversation** | CRM chat thread. | has many **Message** |
+| **Message** | Individual chat entry. | belongs to **Conversation** |
+| **GSTInfo** | Cached GST verification data. | belongs to **Customer** |
+
+> *All models are defined in `prisma/schema.prisma` and migrated to PostgreSQL.*
+
+---
+
+## 7️⃣ Installation Guide
+
 ```bash
-# Clone (already done) and move to project root
+# Clone the repo
+git clone https://github.com/mdshadabforever-wq/prime-apparel-b2b-erp.git
 cd prime-apparel-b2b-erp
 
-# Install dependencies (exact versions via lockfile)
+# Install dependencies
 npm ci
 
-# Prisma: generate client & run migrations (SQLite dev DB)
+# Configure environment variables (see section 8)
+cp .env.example .env
+# edit .env with your values
+
+# Initialise PostgreSQL (Neon) and push schema
+npx prisma db push
+
+# Generate Prisma client
 npx prisma generate
-npx prisma migrate dev --name init   # creates dev.db
 
-# Start dev server
-npm run dev   # http://localhost:3000
+# Seed default RBAC data
+node prisma/seed-rbac.js
+
+# Run the development server
+npm run dev
 ```
 
-Make sure you have a `.env` file with:
-```dotenv
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="#YOUR_SECRET#"
-NEXT_PUBLIC_WHATSAPP_NUMBER="+919999999999"
+### Playwright Setup
+```bash
+# Install browsers (once)
+npx playwright install
+# Run the full test suite
+npx playwright test
 ```
 
 ---
 
-## 🖥️ Local Development Guide
-| Task | Command |
-|------|---------|
-| Run app | `npm run dev` |
-| Lint | `npm run lint` |
-| Format | `npm run format` |
-| Browser QA (Puppeteer) | `npm run test:browser` |
-| Lighthouse report | `npm run lighthouse` |
+## 8️⃣ Environment Variables
 
-### VS Code recommended extensions
-- **Tailwind CSS IntelliSense**
-- **ESLint**
-- **Prettier**
-- **Prisma**
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string (Neon). |
+| `NEXT_PUBLIC_BASE_URL` | Public URL for API calls (e.g., `https://myapp.vercel.app`). |
+| `JWT_SECRET` | Secret used to sign JWT tokens. |
+| `CLOUDINARY_URL` | Cloudinary credentials for media uploads. |
+| `WHATSAPP_API_KEY` *(future)* | Credentials for WhatsApp Cloud API integration. |
+| `GST_PORTAL_URL` | Official GST verification endpoint. |
 
 ---
 
-## 🚢 Deployment Guide
-### Vercel (one‑click)
-1. Connect the GitHub repo to Vercel.
-2. Add environment variables (same as `.env`).
-3. Enable **PostgreSQL** add‑on (Vercel‑Postgres). Vercel will run `npm ci && npm run build` automatically.
+## 9️⃣ Testing Guide
 
-### Docker (self‑hosted)
-```dockerfile
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM node:20-alpine
-WORKDIR /app
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-EXPOSE 3000
-CMD ["npm", "start"]
+```bash
+# Run all E2E tests
+npx playwright test
 ```
-Deploy the image to any container platform (AWS ECS, GKE, Azure ACI).
+
+- **CRM Memory Flow** – validates customer timeline, AI notes, and payment history.
+- **RBAC Lifecycle** – onboarding, role‑based navigation, block/unblock verification.
+- **GST Verification** – end‑to‑end GSTIN validation with captcha handling.
+
+Screenshots from the runs are stored under `artifacts/qa/` and referenced in the README.
 
 ---
 
-## 📱 Mobile‑First Philosophy
-- All components use **responsive Tailwind utilities** (`sm`, `md`, `lg`).
-- Touch targets are **≥ 48 px**.
-- Gesture‑driven UI: swipe‑up modals, drag‑to‑scroll carousels.
-- Images are served via **progressive loading** (`blur‑up` → high‑res). 
-- Font‑stack: `Inter` + `Outfit` for crisp legibility on mobile.
+## 🔟 Deployment Guide
 
----
-
-## 🔐 Security Notes
-- **JWT** signed with `JWT_SECRET` (256‑bit HMAC). Tokens expire after 7 days.
-- **Rate limiting** on auth endpoints (Next.js middleware). 
-- **CORS** locked to the app’s domain.
-- **Prisma** uses parameterised queries – no raw SQL. 
-- All secrets stored **only in environment variables**; never committed.
-- **HTTPS** enforced on Vercel/production domains.
-- See `SECURITY.md` for responsible disclosure.
-
----
-
-## 🤖 AI Browser Automation Testing
-- **Puppeteer** scripts (`tests/automated-browser-test.js`) simulate a full buyer journey:
-  1. Load homepage → take screenshot.
-  2. Complete registration wizard → screenshot.
-  3. Browse catalog (blurred prices) → screenshot.
-  4. Login as buyer → unlocked catalog → screenshot.
-- Results stored under `tests/screenshots/` and compared via visual regression.
-- CI pipeline runs these tests on every push.
+1. **Create a Vercel project** linked to the GitHub repo.
+2. Set the environment variables in Vercel (see section 8).
+3. Vercel will automatically run `npm ci && npm run build`.
+4. **Database** – provision a Neon PostgreSQL instance, add its URL to Vercel env.
+5. Run migrations on first deploy:
+   ```bash
+   npx prisma db push
+   ```
+6. (Optional) Enable **GitHub Actions** for PR linting and Playwright CI.
 
 ---
 
 ## 📈 Future Roadmap
-| Quarter | Goal |
-|---------|------|
-| **Q2 2026** | Migrate fully to PostgreSQL, add Cloudinary CDN for media. |
-| **Q3 2026** | AI‑agent integration for automated lead nurturing and order suggestions. |
-| **Q4 2026** | Stripe payment integration, real‑time order tracking dashboard. |
-| **2027** | Multi‑tenant SaaS version, international warehouses, multi‑currency pricing. |
 
-Full roadmap in `ROADMAP.md`.
+- **WhatsApp Cloud API** – bi‑directional messaging for lead capture.
+- **AI Agents** – automated follow‑up suggestions, buyer‑intent scoring.
+- **Analytics Dashboard** – real‑time KPIs, predictive sales forecasting.
+- **Mobile Apps** – React Native clients for field staff.
+- **Buyer Intelligence AI** – deep‑learning models for demand prediction.
 
 ---
 
-## 🖼️ Production Architecture Diagrams
-> *(Diagrams are stored in `docs/architecture/` and rendered below via Mermaid.)*
+## 🤝 Contributing Guide
 
-```mermaid
-graph LR
-  subgraph Frontend
-    UI[React + Tailwind] -->|API Calls| API[Next.js API]
-    UI -->|WebSocket| WS[Realtime Updates]
-  end
-  subgraph Backend
-    API --> DB[(PostgreSQL)]
-    API --> WA[WhatsApp Service]
-    API --> AI[AI Agent Layer]
-  end
-  subgraph Infra
-    Vercel[Edge CDN] --> Frontend
-    Docker[Container Host] --> Backend
-  end
-```
+1. Fork the repository and create a feature branch.
+2. Follow the **MASTER‑ENGINEERING‑CONTEXT.md** for architectural conventions.
+3. Run `npm run lint` and ensure no lint errors.
+4. Write unit / integration tests for new features.
+5. Submit a PR. CI will run lint, type‑check, and Playwright tests.
+
+### Code Style
+- Use **Inter** font for UI components.
+- Keep Tailwind utility classes in `src/styles/` – avoid inline styles.
+- All new Prisma models must be added with a migration script and documented.
 
 ---
 
-## 🏆 Professional Badges
-```
-![GitHub Repo Size](https://img.shields.io/github/repo-size/username/prime-apparel-b2b-erp?style=flat-square)
-![License](https://img.shields.io/github/license/username/prime-apparel-b2b-erp?style=flat-square)
-![Last Commit](https://img.shields.io/github/last-commit/username/prime-apparel-b2b-erp?style=flat-square)
-![Node Version](https://img.shields.io/badge/node-20%20LTS-brightgreen)
-![Next.js](https://img.shields.io/badge/Next.js-14-000000)
-```
+## 📜 License & Disclaimer
+
+`Prime Apparel ERP` is released under the **MIT License**. The software is provided **as‑is** without warranty. Users are responsible for complying with local tax regulations and data‑protection laws.
 
 ---
 
-## 📚 Additional Documentation
-- `ARCHITECTURE.md` – deeper dive into system components.
-- `API.md` – full OpenAPI spec.
-- `DEPLOYMENT.md` – Vercel & Docker deployment steps.
-- `DATABASE.md` – Prisma schema walkthrough.
-- `CONTRIBUTING.md` – how to submit PRs.
-- `SECURITY.md` – vulnerability reporting.
-- `ROADMAP.md` – long‑term vision.
-
----
-
-*Built with ❤️ by the Prime Apparel team.*
+*Empower your apparel business with a truly modern, AI‑ready ERP.*
