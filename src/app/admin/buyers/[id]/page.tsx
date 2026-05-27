@@ -27,7 +27,8 @@ import {
   User,
   Users,
   AlertTriangle,
-  Send
+  Send,
+  Sparkles
 } from "lucide-react";
 
 export default function CustomerProfilePage({ params }: { params: { id: string } }) {
