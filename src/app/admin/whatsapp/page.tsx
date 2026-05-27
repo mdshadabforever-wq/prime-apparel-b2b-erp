@@ -381,6 +381,8 @@ export default function AdminWhatsAppPage() {
 
           </div>
 
+        </div>
+
       </div>
 
       {!isDisclaimerAccepted && (
