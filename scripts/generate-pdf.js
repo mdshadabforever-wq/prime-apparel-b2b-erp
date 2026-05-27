@@ -1,6 +1,12 @@
-const fs = require('fs');
-const path = require('path');
-const puppeteer = require('puppeteer');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import puppeteer from 'puppeteer';
+import markdownItLib from 'markdown-it';
+import markdownItHighlight from 'markdown-it-highlightjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Path to the markdown source and the output PDF
 const markdownPath = path.resolve(__dirname, '..', 'docs', 'MASTER_PROJECT_OVERVIEW.md');
@@ -8,9 +14,8 @@ const pdfPath = path.resolve(__dirname, '..', 'docs', 'MASTER_PROJECT_OVERVIEW.p
 
 (async () => {
   try {
-    // Read markdown and convert to HTML using a simple markdown-it setup with styling
-    const markdownIt = require('markdown-it')({ html: true, linkify: true, typographer: true });
-    const markdownItHighlight = require('markdown-it-highlightjs');
+    // Read markdown and convert to HTML using styled layouts
+    const markdownIt = markdownItLib({ html: true, linkify: true, typographer: true });
     markdownIt.use(markdownItHighlight);
 
     const raw = fs.readFileSync(markdownPath, 'utf-8');
