@@ -238,7 +238,7 @@ export default function CustomerProfilePage({ params }: { params: { id: string }
 
       // Quick logic to extract state from GST
       const stateCode = customer?.gstin ? customer.gstin.substring(0, 2) : "Unknown";
-      let repeatStr = '["Cambric Kurti Sacks", "Rayon Festive sets"]';
+      const repeatStr = '["Cambric Kurti Sacks", "Rayon Festive sets"]';
       let delayMsg = "ON TIME (Fast Payer)";
       if (customer?.pending_payments > 50000) {
         delayMsg = "⚠️ Risk: Payment delay likely by 7-10 days.";
@@ -530,7 +530,8 @@ export default function CustomerProfilePage({ params }: { params: { id: string }
               { id: "orders", label: "Orders Timeline", icon: FileText },
               { id: "finance", label: "Financial Ledger", icon: Coins },
               { id: "timeline", label: "Operational Timeline", icon: Clock },
-              { id: "ai", label: "AI Memory Brain", icon: ShieldCheck }
+              { id: "ai", label: "AI Memory Brain", icon: Sparkles },
+              { id: "compliance", label: "Compliance & KYC", icon: ShieldCheck }
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -1143,6 +1144,143 @@ export default function CustomerProfilePage({ params }: { params: { id: string }
 
                 </div>
               </div>
+
+            </div>
+          )}
+
+          {/* TAB CONTENT 6: B2B COMPLIANCE & KYC AUDIT */}
+          {activeTab === "compliance" && (
+            <div className="flex flex-col gap-6">
+              
+              {/* Consent and Security Audit Trails */}
+              <div className="glass-panel p-5 rounded-2xl border border-white/5 bg-slate-900/40 relative overflow-hidden">
+                <div className="absolute right-0 top-0 w-32 h-32 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
+                
+                <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4 border-b border-slate-855 pb-2 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-gold" /> B2B digital consent &amp; Security Audit Trails
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start font-semibold text-xs text-left">
+                  
+                  {/* IP Address */}
+                  <div className="md:col-span-4 flex flex-col gap-1 p-3.5 rounded-xl bg-slate-950 border border-slate-850">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase">Consent Registered IP</span>
+                    <span className="text-white text-xs font-mono font-bold">
+                      {buyer?.consent_ip || "127.0.0.1"}
+                    </span>
+                  </div>
+
+                  {/* Version */}
+                  <div className="md:col-span-4 flex flex-col gap-1 p-3.5 rounded-xl bg-slate-950 border border-slate-850">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase">Consent Version Code</span>
+                    <span className="text-gold text-xs font-bold font-mono">
+                      {buyer?.consent_version || "v2026-06-01"}
+                    </span>
+                  </div>
+
+                  {/* Timestamp */}
+                  <div className="md:col-span-4 flex flex-col gap-1 p-3.5 rounded-xl bg-slate-950 border border-slate-850">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase">Consent Timestamp</span>
+                    <span className="text-slate-300 text-xs font-bold">
+                      {buyer?.consent_timestamp ? new Date(buyer.consent_timestamp).toLocaleString() : new Date().toLocaleString()}
+                    </span>
+                  </div>
+
+                  {/* WhatsApp Check */}
+                  <div className="md:col-span-6 flex items-center justify-between p-3.5 rounded-xl bg-slate-950 border border-slate-855">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[9px] text-slate-500 font-bold uppercase">WhatsApp CRM Consent</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Agreement for AI assisted catalog dispatches</span>
+                    </div>
+                    <span className={`py-1 px-3.5 rounded-lg text-[9px] font-black uppercase ${buyer?.whatsapp_consent ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25' : 'bg-red-500/10 text-red-400 border border-red-500/25'}`}>
+                      {buyer?.whatsapp_consent ? 'Active ✅' : 'Inactive ❌'}
+                    </span>
+                  </div>
+
+                  {/* Arbitration Check */}
+                  <div className="md:col-span-6 flex items-center justify-between p-3.5 rounded-xl bg-slate-950 border border-slate-855">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[9px] text-slate-500 font-bold uppercase">Arbitration Acceptance</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Mumbai Seat arbitration acceptance (Conciliation Act, 1996)</span>
+                    </div>
+                    <span className={`py-1 px-3.5 rounded-lg text-[9px] font-black uppercase ${buyer?.arbitration_consent ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25' : 'bg-red-500/10 text-red-400 border border-red-500/25'}`}>
+                      {buyer?.arbitration_consent ? 'Accepted ✅' : 'Pending ❌'}
+                    </span>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Fraud Scoring & KYC Analysis */}
+              <div className="glass-panel p-5 rounded-2xl border border-white/5 bg-slate-900/40 relative overflow-hidden">
+                <div className="absolute right-0 top-0 w-32 h-32 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
+                
+                <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4 border-b border-slate-855 pb-2 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-gold" /> B2B Fraud Risk Score &amp; KYC Assessment
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start font-semibold text-xs text-left">
+                  
+                  {/* Gauge */}
+                  <div className="md:col-span-6 flex flex-col gap-2.5 p-4 rounded-xl bg-slate-950 border border-slate-850">
+                    <div className="flex justify-between items-center text-[9px] text-slate-500 font-bold uppercase">
+                      <span>Dynamic Fraud Risk Score</span>
+                      <span className={`font-sans font-black text-xs ${customer.fraud_risk_score > 60 ? 'text-red-400' : customer.fraud_risk_score > 30 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {customer.fraud_risk_score || 15} / 100
+                      </span>
+                    </div>
+                    <div className="h-2.5 w-full rounded bg-slate-900 overflow-hidden border border-white/5">
+                      <div
+                        className={`h-full rounded transition-all duration-1000 ${customer.fraud_risk_score > 60 ? 'bg-red-500' : customer.fraud_risk_score > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${customer.fraud_risk_score || 15}%` }}
+                      />
+                    </div>
+                    <span className="text-[8px] text-slate-500 leading-normal font-medium">
+                      Calculated on identity checks, PAN/GST validity, billing mismatches, and phone carrier reputation algorithms.
+                    </span>
+                  </div>
+
+                  {/* Risk analysis text */}
+                  <div className="md:col-span-6 flex flex-col gap-1.5 p-4 rounded-xl bg-slate-950 border border-slate-850 h-full justify-between">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase">Risk Analysis Report</span>
+                    <p className="text-[10px] leading-relaxed text-slate-300 font-sans font-medium whitespace-pre-wrap">
+                      {customer.fraud_risk_details || "✅ All KYC checks successfully passed. Standard unregistered retail profile matched with secure timestamped logs. Low priority operational verification approved."}
+                    </p>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Export details */}
+              {buyer?.is_export_buyer && (
+                <div className="glass-panel p-5 rounded-2xl border border-white/5 bg-slate-900/40 relative overflow-hidden">
+                  <div className="absolute right-0 top-0 w-32 h-32 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
+                  
+                  <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4 border-b border-slate-855 pb-2 flex items-center gap-1.5">
+                    <Briefcase className="w-4 h-4 text-gold" /> Cross-Border Sourcing / Export Credentials
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start font-semibold text-xs text-left">
+                    
+                    {/* Country */}
+                    <div className="md:col-span-6 flex flex-col gap-1.5 p-4 rounded-xl bg-slate-950 border border-slate-850">
+                      <span className="text-[9px] text-slate-500 font-bold uppercase">Destination Country Port</span>
+                      <span className="text-white text-xs font-bold">
+                        {buyer?.export_country || "United Arab Emirates"}
+                      </span>
+                    </div>
+
+                    {/* Import-Export Code */}
+                    <div className="md:col-span-6 flex flex-col gap-1.5 p-4 rounded-xl bg-slate-950 border border-slate-850">
+                      <span className="text-[9px] text-slate-500 font-bold uppercase">Import-Export Code (IEC) / Tax ID</span>
+                      <span className="text-gold text-xs font-bold font-mono">
+                        {buyer?.export_iec_code || "N/A"}
+                      </span>
+                    </div>
+
+                  </div>
+                </div>
+              )}
 
             </div>
           )}

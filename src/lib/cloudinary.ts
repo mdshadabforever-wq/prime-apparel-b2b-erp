@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 
 /**
  * Uploads a file (base64 or buffer) to Cloudinary or saves to public directory as fallback.
@@ -21,7 +22,6 @@ export async function uploadProductImage(fileBuffer: Buffer, fileName: string): 
       const signaturePayload = `timestamp=${timestamp}${apiSecret}`;
       
       // Generate SHA-1 hash for secure signed upload
-      const crypto = require("crypto");
       const signature = crypto.createHash("sha1").update(signaturePayload).digest("hex");
 
       const base64File = `data:image/jpeg;base64,${fileBuffer.toString("base64")}`;

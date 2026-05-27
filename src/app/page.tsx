@@ -99,7 +99,7 @@ export default function HomePage() {
 
         {/* Master Heading */}
         <h1 className="font-outfit text-4xl md:text-7xl font-black tracking-tight text-white leading-[1.08] max-w-4xl">
-          India's Smartest Sourcing Hub <br />
+          India&apos;s Smartest Sourcing Hub <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-yellow-400 to-amber-500 font-extrabold">
             For Kurtis & Suit Sets
           </span>
@@ -107,7 +107,7 @@ export default function HomePage() {
 
         {/* Subheading */}
         <p className="mt-6 text-slate-400 text-sm md:text-lg max-w-2xl leading-relaxed">
-          Surat's direct mill prices merged with Mumbai's strict quality control discipline. Unlocking seamless WhatsApp order finalization and digital tracking audits.
+          Surat&apos;s direct mill prices merged with Mumbai&apos;s strict quality control discipline. Unlocking seamless WhatsApp order finalization and digital tracking audits.
         </p>
 
         {/* CTA Actions */}
@@ -294,7 +294,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10 text-left">
           <div className="flex flex-col gap-3">
             <h4 className="font-outfit font-bold text-white text-md tracking-wider">PRIME APPAREL EXPORTS</h4>
-            <p className="leading-relaxed text-slate-400">India's leading B2B ladies ethnic apparel distribution hub. Surat sourcing mill prices, Mumbai Quality Control discipline.</p>
+            <p className="leading-relaxed text-slate-400">India&apos;s leading B2B ladies ethnic apparel distribution hub. Surat sourcing mill prices, Mumbai Quality Control discipline.</p>
             <p className="text-[10px] text-slate-500">GST Compliant Billing guaranteed.</p>
           </div>
           <div className="flex flex-col gap-3">

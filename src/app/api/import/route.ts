@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireStaffRole } from "@/lib/api-auth";
 
 export async function POST(request: Request) {
   try {
+    let caller;
+    try { caller = await requireStaffRole(request, "INVENTORY", "PURCHASE"); } catch (r) { return r as NextResponse; }
     const body = await request.json();
     const { csvContent } = body;
 

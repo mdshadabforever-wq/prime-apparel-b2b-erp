@@ -17,6 +17,9 @@ export default function AdminOrdersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Modals state
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
@@ -40,25 +43,39 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [search, statusFilter, paymentFilter, dateFilter, startDate, endDate]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch Orders
-      const resOrders = await fetch("/api/orders");
+      // Build filter parameters for backend-side query optimization
+      const queryParams = new URLSearchParams({
+        search: search.trim(),
+        statusFilter,
+        paymentFilter,
+        dateFilter,
+        startDate,
+        endDate
+      });
+
+      // 1. Fetch Orders (filtered on standard Neon database level)
+      const resOrders = await fetch(`/api/orders?${queryParams.toString()}`);
       const dataOrders = await resOrders.json();
       setOrders(Array.isArray(dataOrders) ? dataOrders : []);
 
-      // 2. Fetch Buyers for manual create order
-      const resBuyers = await fetch("/api/buyers");
-      const dataBuyers = await resBuyers.json();
-      setBuyers(Array.isArray(dataBuyers) ? dataBuyers : []);
+      // 2. Fetch Buyers for manual create order (query only once on mount to optimize)
+      if (buyers.length === 0) {
+        const resBuyers = await fetch("/api/buyers");
+        const dataBuyers = await resBuyers.json();
+        setBuyers(Array.isArray(dataBuyers) ? dataBuyers : []);
+      }
 
-      // 3. Fetch Products for manual item adds
-      const resProducts = await fetch("/api/products");
-      const dataProducts = await resProducts.json();
-      setProducts(Array.isArray(dataProducts) ? dataProducts : []);
+      // 3. Fetch Products for manual item adds (query only once on mount to optimize)
+      if (products.length === 0) {
+        const resProducts = await fetch("/api/products");
+        const dataProducts = await resProducts.json();
+        setProducts(Array.isArray(dataProducts) ? dataProducts : []);
+      }
     } catch (e) {
       setError("Failed to fetch database records.");
     } finally {
@@ -120,7 +137,7 @@ export default function AdminOrdersPage() {
     if (!selectedProd) return;
 
     // Use standard price for matching quantity count
-    let price = selectedProd.standard_price;
+    const price = selectedProd.standard_price;
 
     setCreateForm((prev) => {
       const existing = prev.items.find((i) => i.skuId === createItemInput.skuId);
@@ -224,18 +241,8 @@ export default function AdminOrdersPage() {
   const estGstAmount = Math.round(estTaxableAmount * 0.05);
   const estInvoiceAmount = estTaxableAmount + estGstAmount;
 
-  // Filter dynamic listings
-  const filteredOrders = orders.filter((o) => {
-    const matchesSearch =
-      o.order_id.toLowerCase().includes(search.toLowerCase()) ||
-      o.buyer.business_name.toLowerCase().includes(search.toLowerCase()) ||
-      o.buyer.full_name.toLowerCase().includes(search.toLowerCase());
-
-    const matchesStatus = statusFilter === "all" || o.order_status === statusFilter;
-    const matchesPayment = paymentFilter === "all" || o.payment_status === paymentFilter;
-
-    return matchesSearch && matchesStatus && matchesPayment;
-  });
+  // Filter dynamic listings (now fully executed server-side on Neon database level)
+  const filteredOrders = orders;
 
   return (
     <div className="flex flex-col gap-6 text-left font-sans text-slate-300 animate-fade-in">
@@ -360,7 +367,52 @@ export default function AdminOrdersPage() {
           <option value="pending">Pending</option>
           <option value="overdue">Overdue</option>
         </select>
+
+        {/* Date Filter Dropdown */}
+        <select
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          className="w-full md:w-48 py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-slate-300 cursor-pointer font-medium transition-colors"
+        >
+          <option value="all">Date Range: All</option>
+          <option value="today">Today (Day-wise)</option>
+          <option value="week">Last 7 Days (Week-wise)</option>
+          <option value="custom">Custom Date Range</option>
+        </select>
       </div>
+
+      {/* CUSTOM DATE PICKER FIELDS */}
+      {dateFilter === "custom" && (
+        <div className="glass-panel p-4 rounded-xl border border-white/5 flex flex-col sm:flex-row gap-4 items-center animate-fade-in -mt-2">
+          <div className="flex flex-col gap-1 w-full sm:w-auto">
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider pl-1">Start Date</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-slate-300 cursor-pointer font-semibold"
+            />
+          </div>
+          
+          <div className="flex flex-col gap-1 w-full sm:w-auto">
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider pl-1">End Date</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-slate-300 cursor-pointer font-semibold"
+            />
+          </div>
+          
+          <button
+            type="button"
+            onClick={() => { setStartDate(""); setEndDate(""); setDateFilter("all"); }}
+            className="py-2.5 px-4 rounded-xl border border-red-500/10 text-red-400 text-xs font-semibold hover:bg-red-500/5 transition-colors self-end mt-2 sm:mt-0"
+          >
+            Clear Date Range
+          </button>
+        </div>
+      )}
 
       {/* ORDERS LIST TABLE */}
       {loading ? (

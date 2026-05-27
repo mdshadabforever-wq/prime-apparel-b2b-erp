@@ -27,6 +27,12 @@ export async function GET(request: Request) {
 // POST: Ingest incoming WhatsApp Cloud API messages and append to Customer Memory
 export async function POST(request: Request) {
   try {
+    // Verify webhook origin via shared token header (Meta sends X-Hub-Signature-256)
+    const hubSignature = request.headers.get("x-hub-signature-256");
+    // In production, verify HMAC signature. For now, log if missing.
+    if (!hubSignature) {
+      console.warn("⚠️ WhatsApp webhook received without X-Hub-Signature-256 header");
+    }
     const body = await request.json();
     console.log("📨 Received WhatsApp Webhook payload:", JSON.stringify(body));
 

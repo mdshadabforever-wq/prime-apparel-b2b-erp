@@ -1,11 +1,4 @@
-import { db } from "./db";
-
 const SHIPROCKET_API_BASE = "https://apiv2.shiprocket.in/v1/external";
-
-interface ShiprocketConfig {
-  email?: string;
-  password?: string;
-}
 
 let cachedToken: string | null = null;
 let tokenExpiry: number | null = null;
@@ -114,12 +107,13 @@ export async function createShiprocketShipment(order: any) {
     }
     throw new Error(data.message || "Shiprocket internal validation failed.");
   } catch (err: any) {
-    console.error("Shiprocket API call failed, falling back to secure sandbox generator:", err.message);
+    console.error("Shiprocket API call failed:", err.message);
     return {
-      success: true,
-      shipmentId: 230985721 + Math.floor(Math.random() * 100000),
-      awbNumber: `SR${98374523 + Math.floor(Math.random() * 900000)}`,
-      carrier: "SafeExpress B2B"
+      success: false,
+      error: err.message || "Shiprocket shipment creation failed. Please retry or use manual dispatch.",
+      shipmentId: null,
+      awbNumber: null,
+      carrier: null
     };
   }
 }
@@ -186,8 +180,8 @@ export async function fetchShiprocketPOD(shipmentId: string) {
     console.error("Shiprocket POD fetch failed:", err);
   }
   return {
-    success: true,
-    podUrl: "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?auto=format&fit=crop&w=800&q=80",
-    podSignature: "Signed by Ramesh Kumar (Proprietor)"
+    success: false,
+    podUrl: null,
+    podSignature: null
   };
 }

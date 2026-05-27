@@ -31,8 +31,22 @@ export async function POST(request: Request) {
       panOrAadhaar, // secure pan or aadhaar string for unregistered
       gstLegalName,
       gstAddress,
-      gstFilingStatus
+      gstFilingStatus,
+      isExportBuyer,
+      exportCountry,
+      exportIecCode,
+      termsConsent,
+      whatsappConsent,
+      arbitrationConsent
     } = body;
+
+    // Validate consents
+    if (!termsConsent || !whatsappConsent || !arbitrationConsent) {
+      return NextResponse.json(
+        { error: "Submit karne ke liye sabhi Master Terms, WhatsApp communication aur Arbitration policies ko consent dena zaroori hai." },
+        { status: 400 }
+      );
+    }
 
     // Validate essential fields
     if (!fullName || !mobile || !password || !businessName || !businessType || !city || !state || !pincode) {
@@ -44,30 +58,40 @@ export async function POST(request: Request) {
 
     // Strong backend validations for buyer type
     const selectedBuyerType = buyerType === "GST" ? "GST" : "NON_GST";
-    if (selectedBuyerType === "GST") {
-      if (!gstNumber || gstNumber.trim().length !== 15) {
+    
+    if (isExportBuyer) {
+      if (!exportIecCode || exportIecCode.trim().length === 0) {
         return NextResponse.json(
-          { error: "Registered Business ke liye 15-character valid GSTIN number mandatory hai." },
+          { error: "Export Buyer ke liye Import-Export Code (IEC) ya Tax ID mandatory hai." },
           { status: 400 }
         );
       }
     } else {
-      if (!panOrAadhaar || panOrAadhaar.trim().length === 0) {
-        return NextResponse.json(
-          { error: "Unregistered Retailer ke liye PAN card ya Aadhaar number mandatory hai." },
-          { status: 400 }
-        );
-      }
-      
-      const cleanPanOrAadhaar = panOrAadhaar.trim().toUpperCase();
-      const isPan = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPanOrAadhaar);
-      const isAadhaar = /^[0-9]{12}$/.test(cleanPanOrAadhaar);
-      
-      if (!isPan && !isAadhaar) {
-        return NextResponse.json(
-          { error: "Kripya valid 10-digit PAN (e.g. ABCDE1234F) ya 12-digit Aadhaar number daalein." },
-          { status: 400 }
-        );
+      if (selectedBuyerType === "GST") {
+        if (!gstNumber || gstNumber.trim().length !== 15) {
+          return NextResponse.json(
+            { error: "Registered Business ke liye 15-character valid GSTIN number mandatory hai." },
+            { status: 400 }
+          );
+        }
+      } else {
+        if (!panOrAadhaar || panOrAadhaar.trim().length === 0) {
+          return NextResponse.json(
+            { error: "Unregistered Retailer ke liye PAN card ya Aadhaar number mandatory hai." },
+            { status: 400 }
+          );
+        }
+        
+        const cleanPanOrAadhaar = panOrAadhaar.trim().toUpperCase();
+        const isPan = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPanOrAadhaar);
+        const isAadhaar = /^[0-9]{12}$/.test(cleanPanOrAadhaar);
+        
+        if (!isPan && !isAadhaar) {
+          return NextResponse.json(
+            { error: "Kripya valid 10-digit PAN (e.g. ABCDE1234F) ya 12-digit Aadhaar number daalein." },
+            { status: 400 }
+          );
+        }
       }
     }
 
@@ -146,6 +170,9 @@ export async function POST(request: Request) {
       gstNumber: finalGstNum
     });
 
+    // Retrieve IP
+    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "127.0.0.1";
+
     // 4. Create Buyer record
     const newBuyer = await db.buyer.create({
       data: {
@@ -173,7 +200,15 @@ export async function POST(request: Request) {
         account_status: "PENDING", // Manual approval needed
         credit_limit: 0,
         credit_days: 0,
-        notes: `Registered expected purchases: ${expectedMonthlyPurchase || "Unspecified"}. Products: ${Array.isArray(productsInterested) ? productsInterested.join(", ") : "None"}. currently buying from: ${currentlyBuyingFrom || "None"}.`
+        notes: `Registered expected purchases: ${expectedMonthlyPurchase || "Unspecified"}. Products: ${Array.isArray(productsInterested) ? productsInterested.join(", ") : "None"}. currently buying from: ${currentlyBuyingFrom || "None"}.`,
+        consent_version: "v2026-06-01",
+        consent_ip: ip,
+        consent_timestamp: new Date(),
+        whatsapp_consent: !!whatsappConsent,
+        arbitration_consent: !!arbitrationConsent,
+        is_export_buyer: !!isExportBuyer,
+        export_iec_code: isExportBuyer ? exportIecCode : null,
+        export_country: isExportBuyer ? exportCountry : null
       }
     });
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthTokenFromHeader, verifyToken, hashPassword } from "@/lib/auth";
+export const dynamic = "force-dynamic";
 
 // GET: List all users/staff with search & filters
 export async function GET(request: Request) {

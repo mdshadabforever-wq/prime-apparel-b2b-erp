@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
 
 const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i;
 
@@ -16,6 +17,8 @@ const STATE_CODES: Record<string, string> = {
 // POST /api/gst/verify: Validate GSTIN format and fetch business intelligence snapshot
 export async function POST(request: Request) {
   try {
+    let caller;
+    try { caller = requireAuth(request); } catch (r) { return r as NextResponse; }
     const { gstNumber } = await request.json();
 
     if (!gstNumber) {

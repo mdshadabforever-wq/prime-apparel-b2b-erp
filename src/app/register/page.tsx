@@ -58,6 +58,68 @@ export default function RegisterPage() {
     }
   };
 
+  const sendMockOtp = async () => {
+    try {
+      await fetch("/api/auth/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mobile: formData.mobile })
+      });
+    } catch (err) {
+      console.error("Mock OTP send error:", err);
+    }
+  };
+
+  const handleOtpVerifyAndSubmit = async () => {
+    setError("");
+    if (otpInput.length !== 6) {
+      setError("Kripya 6-digit OTP code enter karein.");
+      return;
+    }
+    setOtpLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mobile: formData.mobile, otp: otpInput })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "OTP verification failed.");
+
+      await executeRegistration();
+    } catch (err: any) {
+      setError(err.message || "Incorrect verification code. Please try again.");
+      setOtpLoading(false);
+    }
+  };
+
+  const executeRegistration = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Registration process fails. Please verify input data.");
+      }
+
+      setRegistrationResult(data);
+      setStep(6);
+    } catch (e: any) {
+      setError(e.message || "Registration failed. Internet connection check karein.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const [otpInput, setOtpInput] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+
   // Stateful Form Fields
   const [formData, setFormData] = useState({
     fullName: "",
@@ -85,7 +147,13 @@ export default function RegisterPage() {
     productsInterested: [] as string[],
     expectedMonthlyPurchase: "50-100",
     currentlyBuyingFrom: "",
-    referralSource: "Instagram"
+    referralSource: "Instagram",
+    isExportBuyer: false,
+    exportCountry: "United Arab Emirates",
+    exportIecCode: "",
+    termsConsent: false,
+    whatsappConsent: false,
+    arbitrationConsent: false
   });
 
   const indianStates = [
@@ -132,22 +200,29 @@ export default function RegisterPage() {
         setError("Shop Name aur Business Type zaroori hain.");
         return;
       }
-      if (formData.buyerType === "GST") {
-        if (!formData.gstNumber || formData.gstNumber.trim().length !== 15) {
-          setError("Registered B2B Business ke liye 15-character valid GSTIN number mandatory hai.");
+      if (formData.isExportBuyer) {
+        if (!formData.exportIecCode || formData.exportIecCode.trim().length === 0) {
+          setError("Export Buyer ke liye Import-Export Code (IEC) ya Tax ID mandatory hai.");
           return;
         }
       } else {
-        if (!formData.panOrAadhaar || formData.panOrAadhaar.trim().length === 0) {
-          setError("Unregistered Retailer ke liye PAN card ya Aadhaar number mandatory hai.");
-          return;
-        }
-        const cleanVal = formData.panOrAadhaar.trim().toUpperCase();
-        const isPan = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanVal);
-        const isAadhaar = /^[0-9]{12}$/.test(cleanVal);
-        if (!isPan && !isAadhaar) {
-          setError("Kripya valid 10-digit PAN (e.g. ABCDE1234F) ya 12-digit Aadhaar enter karein.");
-          return;
+        if (formData.buyerType === "GST") {
+          if (!formData.gstNumber || formData.gstNumber.trim().length !== 15) {
+            setError("Registered B2B Business ke liye 15-character valid GSTIN number mandatory hai.");
+            return;
+          }
+        } else {
+          if (!formData.panOrAadhaar || formData.panOrAadhaar.trim().length === 0) {
+            setError("Unregistered Retailer ke liye PAN card ya Aadhaar number mandatory hai.");
+            return;
+          }
+          const cleanVal = formData.panOrAadhaar.trim().toUpperCase();
+          const isPan = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanVal);
+          const isAadhaar = /^[0-9]{12}$/.test(cleanVal);
+          if (!isPan && !isAadhaar) {
+            setError("Kripya valid 10-digit PAN (e.g. ABCDE1234F) ya 12-digit Aadhaar enter karein.");
+            return;
+          }
         }
       }
     }
@@ -161,37 +236,41 @@ export default function RegisterPage() {
         return;
       }
     }
+    if (step === 5) {
+      if (!formData.termsConsent || !formData.whatsappConsent || !formData.arbitrationConsent) {
+        setError("Submit karne ke liye sabhi Master Terms, WhatsApp communication aur Arbitration policies ko consent dena zaroori hai.");
+        return;
+      }
+      setStep(5.5);
+      sendMockOtp();
+      return;
+    }
     setStep((prev) => Math.min(5, prev + 1));
   };
 
   const prevStep = () => {
     setError("");
+    if (step === 5.5) {
+      setStep(5);
+      return;
+    }
     setStep((prev) => Math.max(1, prev - 1));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Registration process fails. Please verify input data.");
+    if (step === 5.5) {
+      await handleOtpVerifyAndSubmit();
+    } else if (step === 5) {
+      if (!formData.termsConsent || !formData.whatsappConsent || !formData.arbitrationConsent) {
+        setError("Submit karne ke liye sabhi Master Terms, WhatsApp communication aur Arbitration policies ko consent dena zaroori hai.");
+        return;
       }
-
-      setRegistrationResult(data);
-      setStep(6); // Success Step Screen!
-    } catch (e: any) {
-      setError(e.message || "Registration failed. Internet connection check karein.");
-    } finally {
-      setIsSubmitting(false);
+      setStep(5.5);
+      await sendMockOtp();
+    } else {
+      nextStep();
     }
   };
 
@@ -315,83 +394,135 @@ export default function RegisterPage() {
                   <h3 className="font-outfit font-bold text-white text-sm uppercase tracking-wider">Business & Shop Details</h3>
                 </div>
 
-                {/* Buyer Type Toggle */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-slate-400 font-medium">Buyer Onboarding Type *</label>
-                  <div className="grid grid-cols-2 gap-3 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => setFormData(p => ({ ...p, buyerType: "NON_GST", gstNumber: "", gstLegalName: "", gstAddress: "", gstFilingStatus: "" }))}
-                      className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all text-center leading-normal ${
-                        formData.buyerType === "NON_GST"
-                          ? "bg-white text-slate-950 border-white font-black"
-                          : "bg-slate-950 text-slate-400 border-slate-850 hover:text-white"
-                      }`}
-                    >
-                      Retailer / Non-GST (Aadhaar / PAN)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData(p => ({ ...p, buyerType: "GST", panOrAadhaar: "" }))}
-                      className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all text-center leading-normal ${
-                        formData.buyerType === "GST"
-                          ? "bg-white text-slate-950 border-white font-black"
-                          : "bg-slate-950 text-slate-400 border-slate-850 hover:text-white"
-                      }`}
-                    >
-                      Registered B2B (GSTIN)
-                    </button>
-                  </div>
+                {/* Export / International Buyer Toggle */}
+                <div className="flex flex-col gap-2 bg-slate-950/20 p-3.5 rounded-xl border border-white/5">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      name="isExportBuyer"
+                      checked={formData.isExportBuyer}
+                      onChange={(e) => setFormData(p => ({ ...p, isExportBuyer: e.target.checked }))}
+                      className="rounded border-slate-855 text-gold focus:ring-gold accent-gold w-4 h-4"
+                    />
+                    <span>International / Export Sourcing Business</span>
+                  </label>
+                  <span className="text-[9px] text-slate-500 font-medium leading-normal">Apna business export segment ya Bharat ke bahar se operate karne par check karein.</span>
                 </div>
 
-                {formData.buyerType === "GST" ? (
+                {formData.isExportBuyer ? (
                   <div className="flex flex-col gap-4 bg-slate-950/40 p-4 rounded-xl border border-white/5 shadow-inner">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">GSTIN Number *</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          name="gstNumber"
-                          value={formData.gstNumber}
-                          onChange={(e) => setFormData(p => ({ ...p, gstNumber: e.target.value }))}
-                          placeholder="e.g. 27AAAAA1111A1Z1"
-                          className="flex-grow py-2 px-3.5 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white uppercase font-bold"
-                          maxLength={15}
-                        />
-                        <button
-                          type="button"
-                          disabled={gstVerifying}
-                          onClick={handleGstVerify}
-                          className="py-2 px-4 rounded-xl bg-gold hover:bg-gold-600 text-slate-950 font-black text-xs transition-all active:scale-95 disabled:opacity-50 shrink-0"
-                        >
-                          {gstVerifying ? "Verifying..." : "Verify GSTIN"}
-                        </button>
-                      </div>
-                      <span className="text-[9px] text-slate-600 font-medium">Verify karne par company details automatic pre-fill ho jayengi.</span>
+                      <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Sourcing Country *</label>
+                      <select
+                        name="exportCountry"
+                        value={formData.exportCountry}
+                        onChange={handleInputChange}
+                        className="py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-slate-300 font-medium"
+                      >
+                        <option value="United Arab Emirates">United Arab Emirates (UAE)</option>
+                        <option value="United States">United States (USA)</option>
+                        <option value="United Kingdom">United Kingdom (UK)</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="Malaysia">Malaysia</option>
+                        <option value="Canada">Canada</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Other">Other International Port</option>
+                      </select>
                     </div>
-
-                    {gstSuccessMsg && (
-                      <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] flex flex-col gap-1.5 leading-relaxed font-semibold">
-                        <span className="text-emerald-300 font-black uppercase text-[9px] tracking-widest">✅ GST Verification Passed</span>
-                        <p><strong>Legal Name:</strong> {formData.gstLegalName}</p>
-                        <p><strong>Registered Address:</strong> {formData.gstAddress}</p>
-                        <p><strong>Filing Status:</strong> <span className="py-0.5 px-1.5 rounded bg-emerald-500 text-slate-950 font-black text-[9px] uppercase tracking-wider">{formData.gstFilingStatus}</span></p>
-                      </div>
-                    )}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Import-Export Code (IEC) / VAT Number *</label>
+                      <input
+                        type="text"
+                        name="exportIecCode"
+                        value={formData.exportIecCode}
+                        onChange={handleInputChange}
+                        placeholder="Enter 10-digit IEC or Business Tax ID"
+                        className="py-2 px-3.5 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white uppercase font-bold"
+                      />
+                      <span className="text-[9px] text-slate-650 font-medium">B2B cross-border custom processing ke liye business license code mandatory hai.</span>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-1.5 bg-slate-950/40 p-4 rounded-xl border border-white/5 shadow-inner">
-                    <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">PAN or Aadhaar Number *</label>
-                    <input
-                      type="text"
-                      name="panOrAadhaar"
-                      value={formData.panOrAadhaar}
-                      onChange={(e) => setFormData(p => ({ ...p, panOrAadhaar: e.target.value }))}
-                      placeholder="e.g. 10-digit PAN or 12-digit Aadhaar"
-                      className="py-2 px-3.5 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white uppercase font-bold"
-                    />
-                    <span className="text-[9px] text-slate-600 font-medium">B2C Retail Invoice print karne ke liye PAN card ya Aadhaar number zaroori hai.</span>
-                  </div>
+                  <>
+                    {/* Buyer Type Toggle */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-slate-400 font-medium">Buyer Onboarding Type *</label>
+                      <div className="grid grid-cols-2 gap-3 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setFormData(p => ({ ...p, buyerType: "NON_GST", gstNumber: "", gstLegalName: "", gstAddress: "", gstFilingStatus: "" }))}
+                          className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all text-center leading-normal ${
+                            formData.buyerType === "NON_GST"
+                              ? "bg-white text-slate-950 border-white font-black"
+                              : "bg-slate-950 text-slate-400 border-slate-850 hover:text-white"
+                          }`}
+                        >
+                          Retailer / Non-GST (Aadhaar / PAN)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(p => ({ ...p, buyerType: "GST", panOrAadhaar: "" }))}
+                          className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all text-center leading-normal ${
+                            formData.buyerType === "GST"
+                              ? "bg-white text-slate-950 border-white font-black"
+                              : "bg-slate-950 text-slate-400 border-slate-850 hover:text-white"
+                          }`}
+                        >
+                          Registered B2B (GSTIN)
+                        </button>
+                      </div>
+                    </div>
+
+                    {formData.buyerType === "GST" ? (
+                      <div className="flex flex-col gap-4 bg-slate-950/40 p-4 rounded-xl border border-white/5 shadow-inner">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">GSTIN Number *</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              name="gstNumber"
+                              value={formData.gstNumber}
+                              onChange={(e) => setFormData(p => ({ ...p, gstNumber: e.target.value }))}
+                              placeholder="e.g. 27AAAAA1111A1Z1"
+                              className="flex-grow py-2 px-3.5 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white uppercase font-bold"
+                              maxLength={15}
+                            />
+                            <button
+                              type="button"
+                              disabled={gstVerifying}
+                              onClick={handleGstVerify}
+                              className="py-2 px-4 rounded-xl bg-gold hover:bg-gold-600 text-slate-950 font-black text-xs transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                            >
+                              {gstVerifying ? "Verifying..." : "Verify GSTIN"}
+                            </button>
+                          </div>
+                          <span className="text-[9px] text-slate-600 font-medium">Verify karne par company details automatic pre-fill ho jayengi.</span>
+                        </div>
+
+                        {gstSuccessMsg && (
+                          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] flex flex-col gap-1.5 leading-relaxed font-semibold">
+                            <span className="text-emerald-300 font-black uppercase text-[9px] tracking-widest">✅ GST Verification Passed</span>
+                            <p><strong>Legal Name:</strong> {formData.gstLegalName}</p>
+                            <p><strong>Registered Address:</strong> {formData.gstAddress}</p>
+                            <p><strong>Filing Status:</strong> <span className="py-0.5 px-1.5 rounded bg-emerald-500 text-slate-950 font-black text-[9px] uppercase tracking-wider">{formData.gstFilingStatus}</span></p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-1.5 bg-slate-950/40 p-4 rounded-xl border border-white/5 shadow-inner">
+                        <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">PAN or Aadhaar Number *</label>
+                        <input
+                          type="text"
+                          name="panOrAadhaar"
+                          value={formData.panOrAadhaar}
+                          onChange={(e) => setFormData(p => ({ ...p, panOrAadhaar: e.target.value }))}
+                          placeholder="e.g. 10-digit PAN or 12-digit Aadhaar"
+                          className="py-2 px-3.5 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-xs text-white uppercase font-bold"
+                        />
+                        <span className="text-[9px] text-slate-600 font-medium">B2C Retail Invoice print karne ke liye PAN card ya Aadhaar number zaroori hai.</span>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className="flex flex-col gap-1.5">
@@ -629,6 +760,67 @@ export default function RegisterPage() {
                     className="py-2.5 px-4 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold focus:ring-1 focus:ring-gold outline-none text-xs transition-all text-white font-medium"
                   />
                 </div>
+
+                {/* B2B Legal Consent Checkboxes */}
+                <div className="flex flex-col gap-3.5 mt-5 pt-4 border-t border-slate-900">
+                  <span className="text-[10px] font-bold text-gold uppercase tracking-wider">Required Legal Consents</span>
+                  
+                  <label className="flex items-start gap-3 cursor-pointer group text-xs text-slate-400 font-medium leading-relaxed">
+                    <input
+                      type="checkbox"
+                      checked={formData.termsConsent}
+                      onChange={(e) => setFormData(p => ({ ...p, termsConsent: e.target.checked }))}
+                      className="rounded border-slate-850 text-gold focus:ring-gold accent-gold w-4 h-4 shrink-0 mt-0.5"
+                    />
+                    <span>I agree to the <a href="/docs/legal/B2B_TERMS.md" target="_blank" className="text-gold underline hover:text-gold-650">Master B2B Terms &amp; Conditions and Privacy Policy</a> (Effective 1 June 2026).*</span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer group text-xs text-slate-400 font-medium leading-relaxed">
+                    <input
+                      type="checkbox"
+                      checked={formData.whatsappConsent}
+                      onChange={(e) => setFormData(p => ({ ...p, whatsappConsent: e.target.checked }))}
+                      className="rounded border-slate-850 text-gold focus:ring-gold accent-gold w-4 h-4 shrink-0 mt-0.5"
+                    />
+                    <span>I expressly consent to receive transactional, operational, and AI-assisted communications via WhatsApp, SMS, Email, and CRM systems.*</span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer group text-xs text-slate-400 font-medium leading-relaxed">
+                    <input
+                      type="checkbox"
+                      checked={formData.arbitrationConsent}
+                      onChange={(e) => setFormData(p => ({ ...p, arbitrationConsent: e.target.checked }))}
+                      className="rounded border-slate-850 text-gold focus:ring-gold accent-gold w-4 h-4 shrink-0 mt-0.5"
+                    />
+                    <span>I accept the Governing Law &amp; Arbitration Clause (Mumbai, India) for business dispute resolution.*</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 5.5: MOCK OTP VERIFICATION */}
+            {step === 5.5 && (
+              <div className="flex flex-col gap-5 text-left animate-scale-in">
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-900">
+                  <Lock className="w-4 h-4 text-gold" />
+                  <h3 className="font-outfit font-bold text-white text-sm uppercase tracking-wider">WhatsApp Verification Code</h3>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-900/35 border border-white/5 shadow-inner text-xs leading-relaxed text-slate-400">
+                  Humne aapke registered WhatsApp mobile number <span className="text-gold font-bold">+{formData.mobile}</span> par ek 6-digit verification code send kiya hai. Kripya security audit compliance ke liye use enter karein.
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Enter 6-Digit OTP *</label>
+                  <input
+                    type="text"
+                    value={otpInput}
+                    onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, "").substring(0, 6))}
+                    placeholder="Enter 123456 to verify mock OTP"
+                    className="py-3 px-4 rounded-xl bg-slate-950 border border-slate-850 focus:border-gold outline-none text-center font-black tracking-widest text-lg text-white"
+                  />
+                  <span className="text-[9px] text-slate-650 font-medium">Compliance guidelines require dynamic verification audit to protect B2B catalog access.</span>
+                </div>
               </div>
             )}
 
@@ -689,7 +881,7 @@ export default function RegisterPage() {
             )}
 
             {/* Stepper Buttons */}
-            {step <= 5 && (
+            {step <= 5.5 && (
               <div className="mt-8 pt-6 border-t border-slate-900 flex justify-between gap-4 font-sans">
                 {step > 1 ? (
                   <button
@@ -703,7 +895,15 @@ export default function RegisterPage() {
                   <div></div>
                 )}
 
-                {step < 5 ? (
+                {step === 5.5 ? (
+                  <button
+                    type="submit"
+                    disabled={otpLoading}
+                    className="py-2 px-5 rounded-xl bg-gold hover:bg-gold-600 text-slate-950 font-black text-xs transition-all flex items-center gap-1.5 ml-auto disabled:opacity-50"
+                  >
+                    {otpLoading ? "Verifying..." : "Verify & Complete"} <CheckCircle className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />
+                  </button>
+                ) : step < 5 ? (
                   <button
                     type="button"
                     onClick={nextStep}

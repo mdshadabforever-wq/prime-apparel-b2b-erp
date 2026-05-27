@@ -48,6 +48,15 @@ export async function checkOrderFeasibility(
       };
     }
 
+    // Verify that the requested price is not lower than standard price
+    if (item.price < product.standard_price) {
+      return {
+        allowed: false,
+        reason: `Price tampering detected for ${product.design_name} [${item.skuId}]. Received ₹${item.price}, expected minimum ₹${product.standard_price}.`,
+        subtotal: 0, volumeDiscount: 0, prepaidDiscount: 0, codCharges: 0, courierCharges: 0, packagingCharges: 0, taxableAmount: 0, gstAmount: 0, invoiceAmount: 0
+      };
+    }
+
     subtotal += item.price * item.qty;
   }
 

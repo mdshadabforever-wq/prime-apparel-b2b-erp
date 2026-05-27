@@ -203,45 +203,55 @@ export async function transitionStatus(
       const product = await db.product.findUnique({ where: { sku_id: entityId } });
       if (!product) throw new Error(`Product ${entityId} not found`);
       oldStatus = product.status;
-      
-      // Update in DB
-      await db.product.update({
-        where: { sku_id: entityId },
-        data: { status: newStatus }
-      });
-
     } else if (entityType === "lead") {
       const lead = await db.lead.findUnique({ where: { mobile: entityId } });
       if (!lead) throw new Error(`Lead with mobile ${entityId} not found`);
       oldStatus = lead.status;
-
-      await db.lead.update({
-        where: { mobile: entityId },
-        data: { status: newStatus, last_contact_date: new Date() }
-      });
-
     } else if (entityType === "order") {
       const order = await db.salesOrder.findUnique({ where: { order_id: entityId } });
       if (!order) throw new Error(`Sales Order ${entityId} not found`);
       oldStatus = order.order_status;
-
-      await db.salesOrder.update({
-        where: { order_id: entityId },
-        data: { order_status: newStatus }
-      });
-
     } else if (entityType === "payment") {
       const order = await db.salesOrder.findUnique({ where: { order_id: entityId } });
       if (!order) throw new Error(`Sales Order ${entityId} not found`);
       oldStatus = order.payment_status;
+    }
 
+    // B. VALIDATE TRANSITION — Enforce VALID_TRANSITIONS map
+    const allowedNextStates = VALID_TRANSITIONS[oldStatus];
+    if (allowedNextStates !== undefined && !allowedNextStates.includes(newStatus)) {
+      return {
+        success: false,
+        message: `Invalid transition: '${oldStatus}' → '${newStatus}' is not allowed for ${entityType}. Allowed: [${allowedNextStates.join(", ")}]`,
+        oldStatus,
+        newStatus
+      };
+    }
+
+    // C. PERFORM STATUS UPDATE IN DB
+    if (entityType === "product") {
+      await db.product.update({
+        where: { sku_id: entityId },
+        data: { status: newStatus }
+      });
+    } else if (entityType === "lead") {
+      await db.lead.update({
+        where: { mobile: entityId },
+        data: { status: newStatus, last_contact_date: new Date() }
+      });
+    } else if (entityType === "order") {
+      await db.salesOrder.update({
+        where: { order_id: entityId },
+        data: { order_status: newStatus }
+      });
+    } else if (entityType === "payment") {
       await db.salesOrder.update({
         where: { order_id: entityId },
         data: { payment_status: newStatus }
       });
     }
 
-    // B. LOG TO AUDIT LOG TABLE
+    // D. LOG TO AUDIT LOG TABLE
     const transitionDesc = `Transitional change for ${entityType} ${entityId} from '${oldStatus}' to '${newStatus}'. Operator: ${operatorName}. Notes: ${comment}`;
     await db.auditLog.create({
       data: {
@@ -252,7 +262,7 @@ export async function transitionStatus(
       }
     });
 
-    // C. DISPATCH INTER-DEPARTMENT HANDOFF NOTIFICATIONS
+    // E. DISPATCH INTER-DEPARTMENT HANDOFF NOTIFICATIONS
     const triggers = getHandoffTriggers(entityType, entityId, newStatus);
     for (const trig of triggers) {
       await db.notification.create({

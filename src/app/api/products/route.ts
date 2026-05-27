@@ -1,12 +1,46 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthTokenFromHeader, verifyToken } from "@/lib/auth";
+export const dynamic = "force-dynamic";
 
-// GET: Fetch all products from SQLite database
-export async function GET() {
+// GET: Fetch products from database with dynamic query parameters and indexing support
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search") || searchParams.get("q") || "";
+    const category = searchParams.get("category") || "all";
+    const status = searchParams.get("status") || "all";
+    const limit = Number(searchParams.get("limit")) || 50; // default 50 records to prevent out-of-memory lockups
+    const page = Number(searchParams.get("page")) || 1;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    // 1. Text Search Filter (SKU or Design Name, case-insensitive)
+    if (search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { sku_id: { contains: q, mode: "insensitive" } },
+        { design_name: { contains: q, mode: "insensitive" } },
+        { fabric: { contains: q, mode: "insensitive" } }
+      ];
+    }
+
+    // 2. Category Filter
+    if (category !== "all") {
+      where.category = category;
+    }
+
+    // 3. Status Filter
+    if (status !== "all") {
+      where.status = status;
+    }
+
     const products = await db.product.findMany({
-      orderBy: { created_date: "desc" }
+      where,
+      orderBy: { created_date: "desc" },
+      take: limit,
+      skip: skip
     });
 
     return NextResponse.json(products);

@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { requireStaffRole } from "@/lib/api-auth";
 import { transitionStatus } from "@/lib/workflow";
 
 export async function POST(request: Request) {
   try {
+    let caller;
+    try { caller = await requireStaffRole(request); } catch (r) { return r as NextResponse; }
     const body = await request.json();
     const { entityType, entityId, newStatus, operatorName, comment } = body;
 

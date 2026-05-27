@@ -179,7 +179,7 @@ export async function processIncomingWhatsApp(
   session.lastUpdated = Date.now();
 
   let reply = "";
-  let escalated = false;
+  const escalated = false;
 
   // Handle explicit human handoff requests
   if (lowerText.includes("human") || lowerText.includes("staff") || lowerText.includes("representative") || lowerText.includes("baat karao") || lowerText.includes("call me") || lowerText.includes("admin")) {

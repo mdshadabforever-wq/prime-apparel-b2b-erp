@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireStaffRole } from "@/lib/api-auth";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
+    let caller;
+    try { caller = await requireStaffRole(request); } catch (r) { return r as NextResponse; }
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "products";
 
     let csvContent = "";
-    let filename = `${type}-export.csv`;
+    const filename = `${type}-export.csv`;
 
     if (type === "products") {
       const products = await db.product.findMany({ orderBy: { sku_id: "asc" } });

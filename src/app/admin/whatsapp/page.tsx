@@ -17,11 +17,12 @@ import {
 } from "lucide-react";
 
 export default function AdminWhatsAppPage() {
-  const [conversations, setConversations] = useState<any[]>([]);
+   const [conversations, setConversations] = useState<any[]>([]);
   const [activeNumber, setActiveNumber] = useState("919876543210"); // Defaults to Sneha Garments
   const [buyers, setBuyers] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useState(false);
 
   // Message inputs
   const [buyerInput, setBuyerInput] = useState("");
@@ -31,6 +32,12 @@ export default function AdminWhatsAppPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Check local storage for policy consent
+    const accepted = localStorage.getItem("ai_disclaimer_accepted");
+    if (accepted === "true") {
+      setIsDisclaimerAccepted(true);
+    }
+
     fetchBuyersAndLeads();
     fetchLogs();
     
@@ -217,7 +224,11 @@ export default function AdminWhatsAppPage() {
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-xs text-white">{contactName}</span>
-                  <span className="text-[9px] text-slate-500">Active simulated dialog thread</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[9px] text-slate-500">Active simulated dialog thread</span>
+                    <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+                    <span className="text-[8px] text-emerald-450 uppercase tracking-widest font-black">AI Policy Approved</span>
+                  </div>
                 </div>
               </div>
               
@@ -317,7 +328,7 @@ export default function AdminWhatsAppPage() {
               </span>
               
               <div className="text-[10px] text-slate-500 leading-relaxed border-b border-slate-800/80 pb-3">
-                Select an active contact on the left, type a message below, and click <strong>"Simulate Incoming Message"</strong> to inspect the AI bot state machine flow responses in real-time.
+                Select an active contact on the left, type a message below, and click <strong>&quot;Simulate Incoming Message&quot;</strong> to inspect the AI bot state machine flow responses in real-time.
               </div>
 
               {/* Simulated Buyer Send Form */}
@@ -370,10 +381,46 @@ export default function AdminWhatsAppPage() {
 
           </div>
 
-        </div>
-
       </div>
 
+      {!isDisclaimerAccepted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+          <div className="glass-panel max-w-md w-full p-8 border border-gold/25 rounded-2xl flex flex-col gap-6 text-center shadow-2xl relative animate-scale-in">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-gold/10 to-transparent rounded-bl-full pointer-events-none"></div>
+            
+            <div className="w-12 h-12 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center mx-auto text-gold">
+              <Sparkles className="w-6 h-6 animate-pulse-glow" />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h3 className="font-outfit font-extrabold text-white text-xl tracking-tight uppercase">AI WhatsApp Sandbox Suite</h3>
+              <span className="text-[10px] font-bold text-gold tracking-widest uppercase">Mandatory Compliance Disclaimer</span>
+            </div>
+
+            <div className="text-left text-xs leading-relaxed text-slate-400 p-4 rounded-xl bg-slate-950 border border-white/5 flex flex-col gap-3.5 font-medium">
+              <p>
+                🚨 <span className="text-slate-200 font-bold uppercase text-[9px] tracking-wider">Operational Rule Compliance:</span> Prime Apparel Exports operates strictly on automated AI chatbots for simulated qualifying stages. Under corporate policy:
+              </p>
+              <ul className="list-disc pl-4 space-y-2 text-[11px]">
+                <li>AI-generated messages are purely informational and operational.</li>
+                <li>No automated message shall independently constitute legal acceptance, pricing guarantees, or dispatch commitments.</li>
+                <li>Only human staff signatures constitute binding commercial obligations.</li>
+                <li>Audit trails and sandbox interactions are tracked for cybersecurity.</li>
+              </ul>
+            </div>
+
+            <button
+              onClick={() => {
+                localStorage.setItem("ai_disclaimer_accepted", "true");
+                setIsDisclaimerAccepted(true);
+              }}
+              className="w-full py-3 bg-gold hover:bg-gold-600 active:scale-98 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-gold/10"
+            >
+              Accept Compliance Policy &amp; Enter
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

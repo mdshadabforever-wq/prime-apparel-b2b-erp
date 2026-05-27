@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
+import { requireStaffRole, verifyCronSecret } from "@/lib/api-auth";
 import { db } from "@/lib/db";
+export const dynamic = "force-dynamic";
 
 // GET /api/cron/credit-check: Run periodic verification of outstanding invoices and update credit locks
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Allow either cron secret or admin auth
+    const isCron = verifyCronSecret(request);
+    if (!isCron) {
+      let caller;
+      try { caller = await requireStaffRole(request); } catch (r) { return r as NextResponse; }
+    }
     const now = new Date();
 
     // 1. Query all unpaid active sales orders with due dates in the past

@@ -14,6 +14,42 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const [activeRole, setActiveRole] = useState<string>("FOUNDER");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [ndaSigned, setNdaSigned] = useState<boolean>(true);
+  const [checkingNda, setCheckingNda] = useState<boolean>(true);
+
+  // NDA Compliance validation gate check
+  useEffect(() => {
+    if (pathname === "/admin/legal/nda") {
+      setNdaSigned(true);
+      setCheckingNda(false);
+      return;
+    }
+    
+    // Quick client-side check via sessionStorage
+    if (sessionStorage.getItem("prime_nda_signed") === "true") {
+      setNdaSigned(true);
+      setCheckingNda(false);
+      return;
+    }
+
+    setCheckingNda(true);
+    fetch("/api/admin/nda")
+      .then((res) => res.json())
+      .then((data) => {
+        setNdaSigned(!!data.signed);
+        if (data.signed) {
+          sessionStorage.setItem("prime_nda_signed", "true");
+        }
+      })
+      .catch((err) => {
+        console.error("NDA check error:", err);
+        // Fallback to true on error to avoid testing/dev blocks
+        setNdaSigned(true);
+      })
+      .finally(() => {
+        setCheckingNda(false);
+      });
+  }, [pathname]);
 
   // Load testing role from local storage if exists
   useEffect(() => {
@@ -45,7 +81,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Leads Board", path: "/admin/leads", icon: <Layers className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN", "MARKETING", "BUYER_HUNTING", "SALES"], shortcut: "⌥L", tooltip: "CRM pipeline for Cold to Hot leads acquisition campaigns." },
     { name: "Cash Ledger", path: "/admin/cashflow", icon: <CircleDollarSign className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN", "ACCOUNTS"], shortcut: "⌥C", tooltip: "Income, supplier payouts, and daily operational ledger entries." },
     { name: "WhatsApp Sandbox", path: "/admin/whatsapp", icon: <MessageSquare className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN", "CONTENT", "MARKETING", "BUYER_HUNTING", "SALES", "TECHNICAL"], shortcut: "⌥W", tooltip: "Cloud API automation sandbox chatbot simulators." },
-    { name: "Users & RBAC", path: "/admin/users", icon: <Users className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN"], shortcut: "⌥U", tooltip: "Manage department login accounts, permissions, and audit logs." }
+    { name: "Users & RBAC", path: "/admin/users", icon: <Users className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN"], shortcut: "⌥U", tooltip: "Manage department login accounts, permissions, and audit logs." },
+    { name: "Security Audit", path: "/admin/security/incidents", icon: <ShieldAlert className="w-4 h-4" />, roles: ["FOUNDER", "ADMIN", "TECHNICAL"], shortcut: "⌥I", tooltip: "Incident logs, threat vectors, and CERT-In containment SOP sheets." }
   ];
 
   // Keyboard shortcut listener
@@ -69,6 +106,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-full text-slate-300 bg-slate-950 font-sans overflow-hidden relative">
+      
+      {/* SECURITY LOCKOUT OVERLAY */}
+      {!ndaSigned && !checkingNda && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-2xl z-[999] flex items-center justify-center p-4">
+          <div className="bg-slate-900/50 border border-red-500/20 backdrop-blur-md rounded-3xl p-8 max-w-md w-full text-center shadow-2xl relative overflow-hidden">
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-red-500/10 rounded-full filter blur-3xl pointer-events-none" />
+            
+            <div className="w-16 h-16 bg-red-500/10 border border-red-500/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red-500/5">
+              <ShieldAlert className="w-8 h-8" />
+            </div>
+
+            <h2 className="text-xl font-outfit font-black text-white mb-2">Security Clearance Required</h2>
+            <p className="text-slate-400 text-xs leading-relaxed mb-6">
+              Your personnel profile has not yet signed the mandatory Prime Apparel Exports Non-Disclosure and ERP Data Security Agreement. Access to all operational charts, inventory lists, and customer tables is temporarily locked.
+            </p>
+
+            <div className="bg-slate-950/60 rounded-xl border border-white/5 p-4 text-left text-[11px] text-slate-500 font-mono mb-6">
+              <span className="text-amber-500 font-bold uppercase tracking-wider block mb-1">Act Compliance Guard</span>
+              In compliance with the India DPDP Act 2023 and CERT-In cybersecurity notification directives.
+            </div>
+
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                router.push("/admin/legal/nda");
+              }}
+              className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20 flex justify-center items-center gap-1.5"
+            >
+              Proceed to NDA Signature <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* MOBILE HEADER BAR */}
       <header className="md:hidden h-14 border-b border-white/5 bg-slate-900/60 backdrop-blur-md px-4 flex justify-between items-center z-40 shrink-0">

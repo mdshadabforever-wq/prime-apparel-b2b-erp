@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import CenteredModal from "@/components/ui/CenteredModal";
 import * as LucideIcons from "lucide-react";
 
 const {
@@ -203,8 +204,8 @@ export default function UserManagementPage() {
     }
   };
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateUser = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
 
@@ -238,8 +239,8 @@ export default function UserManagementPage() {
     }
   };
 
-  const handleEditUser = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEditUser = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!selectedUser) return;
     setErrorMessage("");
     setSuccessMessage("");
@@ -725,307 +726,229 @@ export default function UserManagementPage() {
 
       {/* POPUP MODAL: CREATE EMPLOYEE LOGIN */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setIsCreateModalOpen(false)}></div>
-          <div className="bg-slate-900 border border-white/5 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10 animate-scale-up font-sans">
-            
-            <header className="p-4 border-b border-white/5 flex justify-between items-center bg-slate-950/40">
-              <h2 className="text-sm font-black text-white tracking-wider uppercase flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-amber-500" />
-                <span>Onboard Department Employee</span>
-              </h2>
-              <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-500 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </header>
-
-            <form onSubmit={handleCreateUser} className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[80vh]">
-              
-              {/* Personal Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Employee Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g. Anil Kumar"
-                    className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Mobile Number (Login username)</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.mobile}
-                    onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value }))}
-                    placeholder="e.g. 9876543210"
-                    className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 transition-colors"
-                  />
-                </div>
+        <CenteredModal
+          title="Onboard Department Employee"
+          onConfirm={() => handleCreateUser()}
+          onCancel={() => { setIsCreateModalOpen(false); setErrorMessage('Operation cancelled'); }}
+        >
+          <form onSubmit={handleCreateUser} className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[80vh]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Employee Name</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g. Anil Kumar"
+                  className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 transition-colors"
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="e.g. anil@primeapparel.in"
-                    className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 transition-colors"
-                  />
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Mobile Number (Login username)</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.mobile}
+                  onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value }))}
+                  placeholder="e.g. 9876543210"
+                  className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 transition-colors"
+                />
+              </div>
+            </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Login Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Set initial password"
-                    className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 transition-colors"
-                  />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="e.g. anil@primeapparel.in"
+                  className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 transition-colors"
+                />
               </div>
 
-              {/* Department Roles */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Department Role Presets</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => handlePresetSelect(e.target.value, false)}
-                    className="bg-slate-950 border border-slate-800 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-slate-300 cursor-pointer"
-                  >
-                    <option value="SALES">Sales & Follow-up Team</option>
-                    <option value="ACCOUNTS">Accounts & Billing Team</option>
-                    <option value="INVENTORY">QC & Inventory Team</option>
-                    <option value="TECHNICAL">Technical Systems Team</option>
-                    <option value="PURCHASE">Purchase Team</option>
-                    <option value="PRICING">Pricing & landed Cost Team</option>
-                    <option value="CONTENT">Content Creator Team</option>
-                    <option value="MARKETING">Marketing & Outreach Team</option>
-                    <option value="BUYER_HUNTING">Buyer Hunting Team</option>
-                    <option value="LOGISTICS">Logistics Dispatch Team</option>
-                    <option value="FIELD_BOY">Field Boy Team</option>
-                    <option value="ADMIN">System Administrator</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col justify-end gap-1.5">
-                  <span className="text-[9px] text-slate-500 font-bold block uppercase">Simulation Sourcing Link</span>
-                  <div className="bg-slate-950 border border-slate-850 p-2.5 rounded-xl text-[10px] text-slate-400 font-semibold">
-                    Automatically mapped to <span className="text-amber-400 font-bold">{formData.role}</span> presets.
-                  </div>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Login Password</label>
+                <input
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Set initial password"
+                  className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 transition-colors"
+                />
               </div>
+            </div>
 
-              {/* Permissions override matrix */}
-              <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
-                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Explicit Access Permissions Overrides</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-950 p-4 rounded-xl border border-slate-850">
-                  {permissionOptions.map(p => {
-                    const currentList = formData.permissions ? formData.permissions.split(",") : [];
-                    const isChecked = currentList.includes(p.code);
-                    return (
-                      <label key={p.code} className="flex items-center gap-2 cursor-pointer p-1 text-[10px] text-slate-400 hover:text-white transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => handlePermissionCheckbox(p.code, e.target.checked, false)}
-                          className="w-3.5 h-3.5 accent-amber-500 bg-slate-900 border-slate-800 rounded outline-none cursor-pointer"
-                        />
-                        <span>{p.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <footer className="flex justify-end gap-2.5 pt-4 border-t border-white/5">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-colors"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Department Role Presets</label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => handlePresetSelect(e.target.value, false)}
+                  className="bg-slate-950 border border-slate-800 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-slate-300 cursor-pointer"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 rounded-xl text-xs font-black shadow-lg"
-                >
-                  Confirm Registration
-                </button>
-              </footer>
+                  <option value="SALES">Sales & Follow-up Team</option>
+                  <option value="ACCOUNTS">Accounts & Billing Team</option>
+                  <option value="INVENTORY">QC & Inventory Team</option>
+                  <option value="TECHNICAL">Technical Systems Team</option>
+                  <option value="PURCHASE">Purchase Team</option>
+                  <option value="PRICING">Pricing & landed Cost Team</option>
+                  <option value="CONTENT">Content Creator Team</option>
+                  <option value="MARKETING">Marketing & Outreach Team</option>
+                  <option value="BUYER_HUNTING">Buyer Hunting Team</option>
+                  <option value="LOGISTICS">Logistics Dispatch Team</option>
+                  <option value="FIELD_BOY">Field Boy Team</option>
+                  <option value="ADMIN">System Administrator</option>
+                </select>
+              </div>
 
-            </form>
-          </div>
-        </div>
+              <div className="flex flex-col justify-end gap-1.5">
+                <span className="text-[9px] text-slate-500 font-bold block uppercase">Simulation Sourcing Link</span>
+                <div className="bg-slate-950 border border-slate-850 p-2.5 rounded-xl text-[10px] text-slate-400 font-semibold">
+                  Automatically mapped to <span className="text-amber-400 font-bold">{formData.role}</span> presets.
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
+              <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Explicit Access Permissions Overrides</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-950 p-4 rounded-xl border border-slate-850">
+                {permissionOptions.map(p => {
+                  const currentList = formData.permissions ? formData.permissions.split(",") : [];
+                  const isChecked = currentList.includes(p.code);
+                  return (
+                    <label key={p.code} className="flex items-center gap-2 cursor-pointer p-1 text-[10px] text-slate-400 hover:text-white transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => handlePermissionCheckbox(p.code, e.target.checked, false)}
+                        className="w-3.5 h-3.5 accent-amber-500 bg-slate-900 border-slate-800 rounded outline-none cursor-pointer"
+                      />
+                      <span>{p.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          </form>
+        </CenteredModal>
       )}
 
       {/* POPUP MODAL: EDIT EMPLOYEE PERMISSIONS */}
       {isEditModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setIsEditModalOpen(false)}></div>
-          <div className="bg-slate-900 border border-white/5 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10 animate-scale-up font-sans">
-            
-            <header className="p-4 border-b border-white/5 flex justify-between items-center bg-slate-950/40">
-              <h2 className="text-sm font-black text-white tracking-wider uppercase flex items-center gap-2">
-                <Shield className="w-4 h-4 text-amber-500" />
-                <span>Edit Employee Permissions Matrix: {selectedUser.name}</span>
-              </h2>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-500 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </header>
-
-            <form onSubmit={handleEditUser} className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[80vh]">
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Employee Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={editFormData.name}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Mobile Number</label>
-                  <input
-                    type="text"
-                    required
-                    value={editFormData.mobile}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, mobile: e.target.value }))}
-                    className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white transition-colors"
-                  />
-                </div>
+        <CenteredModal
+          title={`Edit Permissions: ${selectedUser.name}`}
+          onConfirm={() => handleEditUser()}
+          onCancel={() => { setIsEditModalOpen(false); setErrorMessage('Operation cancelled'); }}
+        >
+          <form onSubmit={handleEditUser} className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[80vh]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Employee Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white transition-colors"
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    value={editFormData.email}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white transition-colors"
-                  />
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Mobile Number</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.mobile}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, mobile: e.target.value }))}
+                  className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white transition-colors"
+                />
+              </div>
+            </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Account Status</label>
-                  <select
-                    value={editFormData.status}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, status: e.target.value }))}
-                    className="bg-slate-950 border border-slate-800 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-slate-300 cursor-pointer"
-                  >
-                    <option value="active">Active (Normal Access)</option>
-                    <option value="inactive">Inactive/Blocked (Access revoked)</option>
-                  </select>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="bg-slate-950 border border-slate-800/80 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-white transition-colors"
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Change Role Presets</label>
-                  <select
-                    value={editFormData.role}
-                    onChange={(e) => handlePresetSelect(e.target.value, true)}
-                    className="bg-slate-950 border border-slate-800 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-slate-300 cursor-pointer"
-                  >
-                    <option value="SALES">Sales & Follow-up Team</option>
-                    <option value="ACCOUNTS">Accounts & Billing Team</option>
-                    <option value="INVENTORY">QC & Inventory Team</option>
-                    <option value="TECHNICAL">Technical Systems Team</option>
-                    <option value="PURCHASE">Purchase Team</option>
-                    <option value="PRICING">Pricing Specialist Team</option>
-                    <option value="CONTENT">Content Creator Team</option>
-                    <option value="MARKETING">Marketing Team</option>
-                    <option value="BUYER_HUNTING">Buyer Hunting Team</option>
-                    <option value="LOGISTICS">Logistics Dispatch Team</option>
-                    <option value="FIELD_BOY">Field Boy Team</option>
-                    <option value="ADMIN">System Administrator</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Permissions overrides */}
-              <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
-                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Modify Access Permissions Overrides</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-950 p-4 rounded-xl border border-slate-850">
-                  {permissionOptions.map(p => {
-                    const currentList = editFormData.permissions ? editFormData.permissions.split(",") : [];
-                    const isChecked = currentList.includes(p.code);
-                    return (
-                      <label key={p.code} className="flex items-center gap-2 cursor-pointer p-1 text-[10px] text-slate-400 hover:text-white transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => handlePermissionCheckbox(p.code, e.target.checked, true)}
-                          className="w-3.5 h-3.5 accent-amber-500 bg-slate-900 border-slate-800 rounded outline-none cursor-pointer"
-                        />
-                        <span>{p.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <footer className="flex justify-end gap-2.5 pt-4 border-t border-white/5">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-colors"
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Account Status</label>
+                <select
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, status: e.target.value }))}
+                  className="bg-slate-950 border border-slate-800 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-slate-300 cursor-pointer"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 rounded-xl text-xs font-black shadow-lg"
-                >
-                  Save Configuration
-                </button>
-              </footer>
+                  <option value="active">Active (Normal Access)</option>
+                  <option value="inactive">Inactive/Blocked (Access revoked)</option>
+                </select>
+              </div>
+            </div>
 
-            </form>
-          </div>
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Change Role Presets</label>
+                <select
+                  value={editFormData.role}
+                  onChange={(e) => handlePresetSelect(e.target.value, true)}
+                  className="bg-slate-950 border border-slate-800 focus:border-amber-500/30 outline-none rounded-xl py-2 px-3 text-xs text-slate-300 cursor-pointer"
+                >
+                  <option value="SALES">Sales & Follow-up Team</option>
+                  <option value="ACCOUNTS">Accounts & Billing Team</option>
+                  <option value="INVENTORY">QC & Inventory Team</option>
+                  <option value="TECHNICAL">Technical Systems Team</option>
+                  <option value="PURCHASE">Purchase Team</option>
+                  <option value="PRICING">Pricing Specialist Team</option>
+                  <option value="CONTENT">Content Creator Team</option>
+                  <option value="MARKETING">Marketing Team</option>
+                  <option value="BUYER_HUNTING">Buyer Hunting Team</option>
+                  <option value="LOGISTICS">Logistics Dispatch Team</option>
+                  <option value="FIELD_BOY">Field Boy Team</option>
+                  <option value="ADMIN">System Administrator</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
+              <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Modify Access Permissions Overrides</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-950 p-4 rounded-xl border border-slate-850">
+                {permissionOptions.map(p => {
+                  const currentList = editFormData.permissions ? editFormData.permissions.split(",") : [];
+                  const isChecked = currentList.includes(p.code);
+                  return (
+                    <label key={p.code} className="flex items-center gap-2 cursor-pointer p-1 text-[10px] text-slate-400 hover:text-white transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => handlePermissionCheckbox(p.code, e.target.checked, true)}
+                        className="w-3.5 h-3.5 accent-amber-500 bg-slate-900 border-slate-800 rounded outline-none cursor-pointer"
+                      />
+                      <span>{p.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          </form>
+        </CenteredModal>
       )}
 
-      {/* POPUP MODAL: RESET PASSWORD */}
       {isResetPasswordOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setIsResetPasswordOpen(false)}></div>
-          <div className="bg-slate-900 border border-white/5 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative z-10 animate-scale-up font-sans">
-            
-            <header className="p-4 border-b border-white/5 flex justify-between items-center bg-slate-950/40">
-              <h2 className="text-sm font-black text-white tracking-wider uppercase flex items-center gap-2">
-                <Key className="w-4 h-4 text-amber-500 animate-pulse-glow" />
-                <span>Reset password</span>
-              </h2>
-              <button onClick={() => setIsResetPasswordOpen(false)} className="text-slate-500 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </header>
-
-            <form onSubmit={handleResetPassword} className="p-6 flex flex-col gap-4">
-              <div className="bg-slate-950 border border-slate-850 p-3 rounded-xl">
-                <span className="text-[10px] text-slate-500 font-bold block uppercase">Employee</span>
-                <span className="text-xs font-bold text-white block mt-0.5">{selectedUser.name}</span>
-                <span className="text-[9px] text-slate-400 block font-mono mt-0.5">{selectedUser.email}</span>
-              </div>
-
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl max-w-md w-full p-6 flex flex-col gap-5 text-left shadow-2xl relative glass-panel-glow">
+            <h3 className="font-outfit font-extrabold text-white text-lg">Reset Password: {selectedUser.name}</h3>
+            <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">New Password</label>
                 <input

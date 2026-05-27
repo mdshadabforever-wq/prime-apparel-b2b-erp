@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { processIncomingWhatsApp } from "@/lib/whatsapp";
+import { db } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
@@ -30,7 +31,6 @@ export async function POST(request: Request) {
 // GET: Fetch all active chats conversation history log
 export async function GET() {
   try {
-    const { db } = require("@/lib/db");
     const logs = await db.whatsAppLog.findMany({
       orderBy: { timestamp: "asc" }
     });

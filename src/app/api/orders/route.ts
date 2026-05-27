@@ -1,17 +1,89 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { checkOrderFeasibility, reserveInventory } from "@/lib/inventory";
+import { checkOrderFeasibility, OrderItemInput } from "@/lib/inventory";
 import { getAuthTokenFromHeader, verifyToken } from "@/lib/auth";
+export const dynamic = "force-dynamic";
 
-// GET: List all Sales Orders with Buyer relation details
+// GET: List all Sales Orders with Buyer relation details and dynamic database filters
 export async function GET(request: Request) {
   const tokenHeader = request.headers.get('cookie');
   const authToken = getAuthTokenFromHeader(tokenHeader);
   if (!authToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = verifyToken(authToken);
   if (!user) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+  
   try {
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search") || "";
+    const dateFilter = searchParams.get("dateFilter") || "all";
+    const startDateStr = searchParams.get("startDate") || "";
+    const endDateStr = searchParams.get("endDate") || "";
+    const statusFilter = searchParams.get("statusFilter") || "all";
+    const paymentFilter = searchParams.get("paymentFilter") || "all";
+
+    const where: any = {};
+
+    // 1. Text Search Filter (Order ID, buyer business name, buyer full name)
+    if (search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { order_id: { contains: q, mode: "insensitive" } },
+        {
+          buyer: {
+            OR: [
+              { business_name: { contains: q, mode: "insensitive" } },
+              { full_name: { contains: q, mode: "insensitive" } }
+            ]
+          }
+        }
+      ];
+    }
+
+    // 2. Status Filters
+    if (statusFilter !== "all") {
+      where.order_status = statusFilter;
+    }
+    if (paymentFilter !== "all") {
+      where.payment_status = paymentFilter;
+    }
+
+    // 3. Date Filters (Day-wise, Week-wise, Custom date ranges)
+    const now = new Date();
+    if (dateFilter === "today") {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+      where.order_date = {
+        gte: startOfToday,
+        lte: endOfToday
+      };
+    } else if (dateFilter === "week") {
+      const startOfWeek = new Date();
+      startOfWeek.setDate(now.getDate() - 7);
+      where.order_date = {
+        gte: startOfWeek,
+        lte: now
+      };
+    } else if (dateFilter === "custom") {
+      const dateCond: any = {};
+      if (startDateStr) {
+        const start = new Date(startDateStr);
+        start.setHours(0, 0, 0, 0);
+        dateCond.gte = start;
+      }
+      if (endDateStr) {
+        const end = new Date(endDateStr);
+        end.setHours(23, 59, 59, 999);
+        dateCond.lte = end;
+      }
+      if (Object.keys(dateCond).length > 0) {
+        where.order_date = dateCond;
+      }
+    }
+
     const orders = await db.salesOrder.findMany({
+      where,
       include: { buyer: true },
       orderBy: { order_date: "desc" }
     });
@@ -46,7 +118,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Feasibility check (stock counts, credit limit calculations)
+    // 1. Feasibility check (stock counts, credit limit calculations) — runs BEFORE transaction
     const check = await checkOrderFeasibility(Number(buyerId), items, paymentTerms);
     if (!check.allowed) {
       return NextResponse.json({ error: check.reason }, { status: 403 });
@@ -77,9 +149,6 @@ export async function POST(request: Request) {
     const serial = String(count + 1).padStart(3, "0");
     const orderId = `${todayStr}-${serial}`;
 
-    // 3. Reserve inventory stock counts
-    await reserveInventory(items);
-
     const initialPaid = paymentTerms === "advance"
       ? check.invoiceAmount
       : (depositAmount ? Math.min(Number(depositAmount), check.invoiceAmount) : 0);
@@ -88,66 +157,79 @@ export async function POST(request: Request) {
       ? "paid"
       : (initialPaid > 0 ? "partial" : "pending");
 
-    // 4. Create the Sales Order
-    const newOrder = await db.salesOrder.create({
-      data: {
-        order_id: orderId,
-        buyer_id: Number(buyerId),
-        items: JSON.stringify(items),
-        total_qty: items.reduce((s, i) => s + i.qty, 0),
-        subtotal_amount: check.subtotal,
-        discount_amount: check.volumeDiscount + check.prepaidDiscount,
-        final_amount: check.taxableAmount,
-        gst_amount: check.gstAmount,
-        invoice_amount: check.invoiceAmount,
-        payment_terms: paymentTerms,
-        payment_status: paymentStatus,
-        payment_received_amount: initialPaid,
-        payment_received_date: initialPaid > 0 ? new Date() : null,
-        order_status: "confirmed",
-        created_by: createdBy || "Staff Operator",
-        notes: notes || null,
-        invoice_type: invoiceType,
-        due_date: dueDate,
-        terms_accepted: true
+    // 3. ATOMIC TRANSACTION — Reserve inventory, create order, cashflow, notification, update buyer
+    const newOrder = await db.$transaction(async (tx) => {
+      // 3a. Reserve inventory stock counts
+      for (const item of items) {
+        await tx.product.update({
+          where: { sku_id: item.skuId },
+          data: { qty_reserved: { increment: item.qty } }
+        });
       }
-    });
 
-    // 5. If paid (fully or partially), record direct CashFlow income transaction
-    if (initialPaid > 0) {
-      await db.cashFlow.create({
+      // 3b. Create the Sales Order
+      const order = await tx.salesOrder.create({
         data: {
-          type: "income",
-          category: "order_payment",
-          description: initialPaid === check.invoiceAmount
-            ? `Full advance payment for sales order ${orderId}`
-            : `Partial advance deposit of ₹${initialPaid} for sales order ${orderId}`,
-          amount: initialPaid,
-          sales_order_id: orderId,
-          created_by: createdBy || "Staff Operator"
+          order_id: orderId,
+          buyer_id: Number(buyerId),
+          items: JSON.stringify(items),
+          total_qty: items.reduce((s: number, i: OrderItemInput) => s + i.qty, 0),
+          subtotal_amount: check.subtotal,
+          discount_amount: check.volumeDiscount + check.prepaidDiscount,
+          final_amount: check.taxableAmount,
+          gst_amount: check.gstAmount,
+          invoice_amount: check.invoiceAmount,
+          payment_terms: paymentTerms,
+          payment_status: paymentStatus,
+          payment_received_amount: initialPaid,
+          payment_received_date: initialPaid > 0 ? new Date() : null,
+          order_status: "confirmed",
+          created_by: createdBy || "Staff Operator",
+          notes: notes || null,
+          invoice_type: invoiceType,
+          due_date: dueDate,
+          terms_accepted: true
         }
       });
-    }
 
-    // 6. Log dynamic dashboard notification
-    await db.notification.create({
-      data: {
-        type: "order_received",
-        message: `🎉 New manual Order confirmed! Order ID: ${orderId}, Invoice: ₹${check.invoiceAmount}`,
-        linked_to_id: orderId,
-        status: "unread",
-        for_role: "INVENTORY"
+      // 3c. If paid (fully or partially), record direct CashFlow income transaction
+      if (initialPaid > 0) {
+        await tx.cashFlow.create({
+          data: {
+            type: "income",
+            category: "order_payment",
+            description: initialPaid === check.invoiceAmount
+              ? `Full advance payment for sales order ${orderId}`
+              : `Partial advance deposit of ₹${initialPaid} for sales order ${orderId}`,
+            amount: initialPaid,
+            sales_order_id: orderId,
+            created_by: createdBy || "Staff Operator"
+          }
+        });
       }
-    });
 
-    // Increment Buyer order counters
-    await db.buyer.update({
-      where: { buyer_id: Number(buyerId) },
-      data: {
-        total_orders_count: { increment: 1 },
-        total_orders_value: { increment: check.invoiceAmount },
-        last_order_date: new Date()
-      }
+      // 3d. Log dynamic dashboard notification
+      await tx.notification.create({
+        data: {
+          type: "order_received",
+          message: `🎉 New manual Order confirmed! Order ID: ${orderId}, Invoice: ₹${check.invoiceAmount}`,
+          linked_to_id: orderId,
+          status: "unread",
+          for_role: "INVENTORY"
+        }
+      });
+
+      // 3e. Increment Buyer order counters
+      await tx.buyer.update({
+        where: { buyer_id: Number(buyerId) },
+        data: {
+          total_orders_count: { increment: 1 },
+          total_orders_value: { increment: check.invoiceAmount },
+          last_order_date: new Date()
+        }
+      });
+
+      return order;
     });
 
     return NextResponse.json({ success: true, orderId: newOrder.order_id });
@@ -156,3 +238,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create sales order." }, { status: 500 });
   }
 }
+

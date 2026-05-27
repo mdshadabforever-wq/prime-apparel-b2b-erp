@@ -1,0 +1,28 @@
+/* Dark style for training PDFs */
+body {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  margin: 2rem;
+}
+h1, h2, h3, h4 {
+  color: #ffcc00;
+}
+a {
+  color: #66ccff;
+}
+code {
+  background-color: #2d2d2d;
+  color: #ff9d00;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  border: 1px solid #444;
+  padding: 0.5rem;
+}

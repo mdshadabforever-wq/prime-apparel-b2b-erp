@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { requireStaffRole } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
+    let caller;
+    try { caller = await requireStaffRole(request, "SALES", "MARKETING"); } catch (r) { return r as NextResponse; }
     const buyerId = Number(params.id);
     const body = await request.json();
     const { action, status, creditLimit, creditDays, note } = body;
@@ -57,5 +60,45 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   } catch (error) {
     console.error("Update Buyer Profile Error: ", error);
     return NextResponse.json({ error: "Failed to update buyer profile." }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    let caller;
+    try { caller = await requireStaffRole(request, "ADMIN", "FOUNDER"); } catch (r) { return r as NextResponse; }
+    
+    const buyerId = Number(params.id);
+    
+    // Enforce B2B compliance checks: Check for active B2B orders or invoices
+    const associatedOrders = await db.salesOrder.findMany({
+      where: { buyer_id: buyerId }
+    });
+
+    if (associatedOrders.length > 0) {
+      return NextResponse.json({
+        error: "COMPLIANCE BLOCKED: B2B Data Retention and GST/Arbitration laws require keeping active transaction invoices for at least 8 years. Buyer profile deletion is strictly prohibited."
+      }, { status: 400 });
+    }
+
+    // Delete CRM Customer if exists
+    const customer = await db.customer.findUnique({
+      where: { buyer_id: buyerId }
+    });
+    if (customer) {
+      await db.customer.delete({
+        where: { id: customer.id }
+      });
+    }
+
+    // Safe to delete buyer
+    await db.buyer.delete({
+      where: { buyer_id: buyerId }
+    });
+
+    return NextResponse.json({ success: true, message: "Buyer profile successfully removed from ERP directory." });
+  } catch (error: any) {
+    console.error("Delete Buyer Error: ", error);
+    return NextResponse.json({ error: "Failed to delete buyer profile." }, { status: 500 });
   }
 }
